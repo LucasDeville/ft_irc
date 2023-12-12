@@ -1,24 +1,34 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   common.hpp                                         :+:      :+:    :+:   */
+/*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/11/01 10:25:47 by ldeville          #+#    #+#             */
-/*   Updated: 2023/12/12 14:53:26 by ldeville         ###   ########.fr       */
+/*   Created: 2023/12/12 14:43:05 by ldeville          #+#    #+#             */
+/*   Updated: 2023/12/12 14:52:41 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef __COMMON_HPP__
-#define __COMMON_HPP__
+#ifndef CLIENT_HPP
+#define CLIENT_HPP
 
-#include <iostream>
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <sys/types.h>
+#include "common.hpp"
 
-#include "Server.hpp"
-#include "Client.hpp"
+class Client {
+
+private:
+
+	std::string	_username;
+	std::string	_nickname;
+
+public:
+
+	Client();
+	~Client();
+
+	std::string const &	getUsername() const { return _username; };
+	std::string const &	getNickname() const { return _nickname; };
+};
 
 #endif

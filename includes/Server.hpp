@@ -1,24 +1,34 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   common.hpp                                         :+:      :+:    :+:   */
+/*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/11/01 10:25:47 by ldeville          #+#    #+#             */
-/*   Updated: 2023/12/12 14:53:26 by ldeville         ###   ########.fr       */
+/*   Created: 2023/12/12 14:48:01 by ldeville          #+#    #+#             */
+/*   Updated: 2023/12/12 14:51:58 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef __COMMON_HPP__
-#define __COMMON_HPP__
+#ifndef SERVER_HPP
+#define SERVER_HPP
 
-#include <iostream>
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <sys/types.h>
+#include "common.hpp"
 
-#include "Server.hpp"
-#include "Client.hpp"
+class Server {
+
+private:
+
+	int			_port;
+	std::string	_passwd;
+
+	Server();
+
+public:
+
+	Server(int port, std::string passwd);
+	~Server();
+
+};
 
 #endif
