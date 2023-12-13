@@ -6,7 +6,7 @@
 /*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:48:01 by ldeville          #+#    #+#             */
-/*   Updated: 2023/12/13 14:04:09 by bpleutin         ###   ########.fr       */
+/*   Updated: 2023/12/13 15:20:54 by bpleutin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,7 @@ public:
 	Server(int port, std::string passwd);
 	~Server();
 	void createServer();
-	void startServer(int sockfd);
+	void serverLoop(int sockfd);
 	void acceptClient(int sockfd);
 };
 

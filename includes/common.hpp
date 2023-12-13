@@ -6,7 +6,7 @@
 /*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/01 10:25:47 by ldeville          #+#    #+#             */
-/*   Updated: 2023/12/13 11:31:33 by bpleutin         ###   ########.fr       */
+/*   Updated: 2023/12/13 15:21:33 by bpleutin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <string.h>
+#include <poll.h>
 
 #include "Server.hpp"
 #include "Client.hpp"
