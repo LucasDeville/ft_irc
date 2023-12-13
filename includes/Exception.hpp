@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/13 12:09:27 by ldeville          #+#    #+#             */
-/*   Updated: 2023/12/13 12:10:28 by ldeville         ###   ########.fr       */
+/*   Updated: 2023/12/13 13:52:13 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,12 @@ class listenFailed : public std::exception
 { 
 	public: virtual const char *what() const throw() 
 		{ return ("createServer : listen failed."); } 
+};
+
+class acceptFailed : public std::exception
+{ 
+	public: virtual const char *what() const throw() 
+		{ return ("createServer : accept failed."); } 
 };
 
 #endif
