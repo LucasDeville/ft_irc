@@ -6,7 +6,7 @@
 /*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/01 10:25:47 by ldeville          #+#    #+#             */
-/*   Updated: 2023/12/13 15:50:24 by bpleutin         ###   ########.fr       */
+/*   Updated: 2023/12/14 10:47:01 by bpleutin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@
 #include <string>
 #include <poll.h>
 #include <map>
+#include <vector>
 
 #include "Server.hpp"
 #include "Client.hpp"

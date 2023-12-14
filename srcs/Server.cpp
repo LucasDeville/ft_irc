@@ -6,7 +6,7 @@
 /*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:50:58 by ldeville          #+#    #+#             */
-/*   Updated: 2023/12/13 15:41:05 by bpleutin         ###   ########.fr       */
+/*   Updated: 2023/12/14 11:39:29 by bpleutin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,47 +43,58 @@ void Server::createServer() {
 
 void Server::serverLoop(int sockfd) {
 	std::map<pollfd, Client *>::iterator it;
-	pollfd poll;
-	std::string buffer;
+	pollfd pollFd;
+	std::vector<pollfd> keys;
+    for (it = _client.begin(); it != _client.end(); it++)
+        keys.push_back(it->first);
 	
 	while (1)
 	{
-		if (poll(_client.begin(), _client.size(), -1) == -1)
+		if (poll(&keys[0], _client.size(), -1) == -1)
 			throw pollFailed();
 		for (it = _client.begin(); it != _client.end(); it++)
 		{
-			if (it.revents && POLLHUP)
+			pollFd = it->first;
+			if (pollFd.revents && POLLHUP)
 			{
 				quitServer(it->second);
 				break;
 			}
-			if (it.revents && POLLIN)
+			if (pollFd.revents && POLLIN)
 			{
-				if ()
-				{
-					
-				}
+				if (pollFd.fd == sockfd)
+					acceptClient(sockfd);
 				else
-				{
-					if (recv(it, &buffer, buffer.size(), MSG_DONTWAIT) <= 0);
-						throw recvFailed();
-				}
+					handleInput(sockfd);
 			}
 		}
-		
-		acceptClient(sockfd);
-				
-		send();
 	}
 }
 
 void Server::acceptClient(int sockfd) {
-	int	clen, isock;
+	int	clen, csock;
 	sockaddr_in caddr;
-	clen = sizeof(caddr);
+	pollfd pollFd;
 	
-	if ((isock = accept(sockfd, (struct sockaddr *) &caddr, (socklen_t *) &clen)) < 0);
+	clen = sizeof(caddr);
+	if ((csock = accept(sockfd, (struct sockaddr *) &caddr, (socklen_t *) &clen)) < 0);
 		throw acceptFailed();
 
-	/* add isock in client map */
+	pollFd.fd = csock;
+	pollFd.events = POLLIN;
+	pollFd.revents = 0;
+
+	/* create new Client */
+
+	_client.insert({pollFd, NULL});
+}
+
+void Server::handleInput(std::map<pollfd, Client *>::iterator it, int sockfd) {
+	std::string buffer;
+	
+	if (int err = recv(it->second->getSocket(), &buffer, buffer.size(), 0) < 0)
+		throw recvFailed();
+	else if (err == 0)
+		clientDisconnected();
+	std::cout << it->second->getNickname() << buffer << std::endl;
 }
