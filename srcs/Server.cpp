@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:50:58 by ldeville          #+#    #+#             */
-/*   Updated: 2023/12/14 13:03:34 by ldeville         ###   ########.fr       */
+/*   Updated: 2023/12/14 14:41:55 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,7 @@ Server::~Server() {
 void Server::createServer() {
 	sockaddr_in saddr;
 	pollfd		poll;
-	int sockfd = socket(AF_INET, SOCK_STREAM, NULL);
+	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	
 	if (sockfd < 0)
 		throw socketFailed();
@@ -42,43 +42,44 @@ void Server::createServer() {
 	memset(&poll, 0, sizeof(poll));
 	poll.fd = sockfd;
 	poll.events = POLLIN;
+	_serverSock = sockfd;
 	_pollfd.push_back(poll);
-	serverLoop(sockfd);
+	_client.push_back(new Client(_serverSock));
+	serverLoop();
 }
 
-void Server::serverLoop(int sockfd) {
+void Server::serverLoop() {
 	std::map<pollfd, Client *>::iterator it;
-	pollfd pollFd;
 	
 	while (1)
 	{
 		if (poll(_pollfd.data(), _pollfd.size(), -1) == -1)
 			throw pollFailed();
-		for (int i = 0; i != _pollfd.size(); it++)
+		for (long unsigned int i = 0; i < _pollfd.size(); i++)
 		{
-			if (_pollfd[i].revents && POLLHUP)
+			if (_pollfd[i].revents & POLLHUP)
 			{
-				quitServer(it->second);
+				// quitServer(i);
 				break;
 			}
-			if (_pollfd[i].revents && POLLIN)
+			if (_pollfd[i].revents & POLLIN)
 			{
-				if (_pollfd[i].fd == sockfd)
-					acceptClient(sockfd);
+				if (_pollfd[i].fd == _serverSock)
+					acceptClient();
 				else
-					handleInput(sockfd);
+					handleInput(i);
 			}
 		}
 	}
 }
 
-void Server::acceptClient(int sockfd) {
+void Server::acceptClient() {
 	int	clen, csock;
 	sockaddr_in caddr;
 	pollfd pollFd;
 	
 	clen = sizeof(caddr);
-	if ((csock = accept(sockfd, (struct sockaddr *) &caddr, (socklen_t *) &clen)) < 0);
+	if ((csock = accept(_serverSock, (struct sockaddr *) &caddr, (socklen_t *) &clen)) < 0)
 		throw acceptFailed();
 
 	pollFd.fd = csock;
@@ -86,16 +87,20 @@ void Server::acceptClient(int sockfd) {
 	pollFd.revents = 0;
 
 	/* create new Client */
-
-	_client.insert({pollFd, NULL});
+	_pollfd.push_back(pollFd);
+	_client.push_back(new Client(csock));
+	std::cout << "New client : " << csock << std::endl;
 }
 
-void Server::handleInput(std::map<pollfd, Client *>::iterator it, int sockfd) {
-	std::string buffer;
+void Server::handleInput(int i) {
+	char buffer[2048];
+	int err = recv(_client[i]->getSocket(), &buffer, sizeof(buffer), 0);
 	
-	if (int err = recv(it->second->getSocket(), &buffer, buffer.size(), 0) < 0)
+	if (err < 0)
 		throw recvFailed();
-	else if (err == 0)
-		clientDisconnected();
-	std::cout << it->second->getNickname() << buffer << std::endl;
+	buffer[err] = '\0';
+
+	// else if (err == 0)
+	// 	clientDisconnected(i);
+	std::cout << _client[i]->getNickname() << i << buffer << std::endl;
 }
