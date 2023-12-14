@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:50:58 by ldeville          #+#    #+#             */
-/*   Updated: 2023/12/14 12:16:17 by bpleutin         ###   ########.fr       */
+/*   Updated: 2023/12/14 13:03:34 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,7 @@ Server::~Server() {
 
 void Server::createServer() {
 	sockaddr_in saddr;
+	pollfd		poll;
 	int sockfd = socket(AF_INET, SOCK_STREAM, NULL);
 	
 	if (sockfd < 0)
@@ -38,31 +39,31 @@ void Server::createServer() {
 		throw bindingFailed();
 	if (listen(sockfd, 5) == -1)
 		throw listenFailed();
+	memset(&poll, 0, sizeof(poll));
+	poll.fd = sockfd;
+	poll.events = POLLIN;
+	_pollfd.push_back(poll);
 	serverLoop(sockfd);
 }
 
 void Server::serverLoop(int sockfd) {
 	std::map<pollfd, Client *>::iterator it;
 	pollfd pollFd;
-	std::vector<pollfd> keys;
-    for (it = _client.begin(); it != _client.end(); it++)
-        keys.push_back(it->first);
 	
 	while (1)
 	{
-		if (poll(&keys[0], _client.size(), -1) == -1)
+		if (poll(_pollfd.data(), _pollfd.size(), -1) == -1)
 			throw pollFailed();
-		for (it = _client.begin(); it != _client.end(); it++)
+		for (int i = 0; i != _pollfd.size(); it++)
 		{
-			pollFd = it->first;
-			if (pollFd.revents && POLLHUP)
+			if (_pollfd[i].revents && POLLHUP)
 			{
 				quitServer(it->second);
 				break;
 			}
-			if (pollFd.revents && POLLIN)
+			if (_pollfd[i].revents && POLLIN)
 			{
-				if (pollFd.fd == sockfd)
+				if (_pollfd[i].fd == sockfd)
 					acceptClient(sockfd);
 				else
 					handleInput(sockfd);

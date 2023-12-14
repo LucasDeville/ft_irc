@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/13 12:09:27 by ldeville          #+#    #+#             */
-/*   Updated: 2023/12/14 12:47:12 by ldeville         ###   ########.fr       */
+/*   Updated: 2023/12/14 12:53:30 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,5 +38,18 @@ class acceptFailed : public std::exception
 	public: virtual const char *what() const throw() 
 		{ return ("createServer : accept failed."); } 
 };
+
+class pollFailed : public std::exception
+{ 
+	public: virtual const char *what() const throw() 
+		{ return ("serverLoop : poll failed."); } 
+};
+
+class pollFailed : public std::exception
+{ 
+	public: virtual const char *what() const throw() 
+		{ return ("recvFailed : poll failed."); } 
+};
+
 
 #endif
