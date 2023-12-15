@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:43:05 by ldeville          #+#    #+#             */
-/*   Updated: 2023/12/15 12:31:47 by ldeville         ###   ########.fr       */
+/*   Updated: 2023/12/15 16:10:04 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@ private:
 	std::string	_passwd;
 	int			_mode;
 	int			_socket;
+	bool		_registered;
 	Client();
 
 public:

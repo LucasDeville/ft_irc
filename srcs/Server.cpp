@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:50:58 by ldeville          #+#    #+#             */
-/*   Updated: 2023/12/15 15:11:29 by bpleutin         ###   ########.fr       */
+/*   Updated: 2023/12/15 16:26:44 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@ Server::Server() {
 
 Server::Server(int port, std::string passwd) : _port(port), _passwd(passwd) {
 
+	new_channel( DEFAULT_CHANNEL );
 }
 
 Server::~Server() {
@@ -92,7 +93,9 @@ void Server::acceptClient() {
 
 	/* create new Client */
 	_pollfd.push_back(pollFd);
-	_client.push_back(new Client(csock));
+	Client *newClient = new Client(csock);
+	_client.push_back(newClient);
+	_channel["*"]->addClient(*newClient);
 	std::cout << "New client : " << csock << std::endl;
 }
 
@@ -107,6 +110,19 @@ void Server::handleInput(unsigned long int i) {
 	parseBuffer(buffer, *this, i);
 	std::cout << _client[i]->getNickname() << " (" << i << "):" << buffer << std::endl;
 }
+
+void Server::new_channel(std::string const & name)
+{
+	Channel * channel = new Channel(name);
+	_channel.insert( std::pair<std::string, Channel *>( name, channel ) );
+}
+
+void Server::new_channel(Client const & client, std::string const & name)
+{
+	Channel * channel = new Channel(name, client);
+	_channel.insert( std::pair<std::string, Channel *>( name, channel ) );
+}
+
 
 
 void	Server::setPass(int i, std::string const & pass) { _client[i]->setPass(pass); };

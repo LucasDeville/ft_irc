@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   common.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/01 10:25:47 by ldeville          #+#    #+#             */
-/*   Updated: 2023/12/15 15:10:20 by bpleutin         ###   ########.fr       */
+/*   Updated: 2023/12/15 16:23:56 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,15 +26,17 @@
 #include <map>
 #include <vector>
 
+class Channel;
 class Server;
 class Client;
 
 #include "Exception.hpp"
 #include "Server.hpp"
 #include "Client.hpp"
+#include "Channel.hpp"
+
+# define DEFAULT_CHANNEL "*"
 
 void	parseBuffer(char buffer[2048], Server const & server, int i);
-
-
 
 #endif
