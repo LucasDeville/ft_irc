@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
+/*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:48:01 by ldeville          #+#    #+#             */
-/*   Updated: 2023/12/14 14:04:04 by ldeville         ###   ########.fr       */
+/*   Updated: 2023/12/15 11:28:20 by bpleutin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,9 +36,8 @@ public:
 	void	createServer();
 	void	serverLoop();
 	void	acceptClient();
-	void	handleInput(int i);
-	// void	quitServer(int i);
-	// void	clientDisconnected(int i);
+	void	handleInput(long unsigned int i);
+	void	clientDisconnected(long unsigned int i);
 };
 
 #endif

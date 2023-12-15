@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
+/*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:50:58 by ldeville          #+#    #+#             */
-/*   Updated: 2023/12/14 14:41:55 by ldeville         ###   ########.fr       */
+/*   Updated: 2023/12/15 12:07:15 by bpleutin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,8 +49,6 @@ void Server::createServer() {
 }
 
 void Server::serverLoop() {
-	std::map<pollfd, Client *>::iterator it;
-	
 	while (1)
 	{
 		if (poll(_pollfd.data(), _pollfd.size(), -1) == -1)
@@ -59,7 +57,7 @@ void Server::serverLoop() {
 		{
 			if (_pollfd[i].revents & POLLHUP)
 			{
-				// quitServer(i);
+				clientDisconnected(i);
 				break;
 			}
 			if (_pollfd[i].revents & POLLIN)
@@ -71,6 +69,12 @@ void Server::serverLoop() {
 			}
 		}
 	}
+}
+
+void Server::clientDisconnected(long unsigned int i){
+	std::cout << "IRC: Client '" << _client[i]->getNickname() << "' connection closed." << std::endl;
+	close(_pollfd[i].fd);
+	_pollfd.erase(_pollfd.begin() + i);
 }
 
 void Server::acceptClient() {
@@ -92,15 +96,13 @@ void Server::acceptClient() {
 	std::cout << "New client : " << csock << std::endl;
 }
 
-void Server::handleInput(int i) {
+void Server::handleInput(unsigned long int i) {
 	char buffer[2048];
 	int err = recv(_client[i]->getSocket(), &buffer, sizeof(buffer), 0);
-	
 	if (err < 0)
 		throw recvFailed();
 	buffer[err] = '\0';
-
-	// else if (err == 0)
-	// 	clientDisconnected(i);
-	std::cout << _client[i]->getNickname() << i << buffer << std::endl;
+	if (err == 0)
+	 	clientDisconnected(i);
+	std::cout << _client[i]->getNickname() << " (" << i << "):" << buffer << std::endl;
 }
