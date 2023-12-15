@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:43:05 by ldeville          #+#    #+#             */
-/*   Updated: 2023/12/14 14:16:02 by ldeville         ###   ########.fr       */
+/*   Updated: 2023/12/15 12:31:47 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,6 +38,8 @@ public:
 	std::string const &	getPassword() const { return _passwd; };
 	int const &			getMode() const { return _mode; };
 	int const &			getSocket() const { return _socket; };
+	void				setUser(std::string const & user) { _username = user; };
+	void				setPass(std::string const & pass) { _passwd = pass; };
 };
 
 #endif

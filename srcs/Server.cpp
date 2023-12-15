@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:50:58 by ldeville          #+#    #+#             */
-/*   Updated: 2023/12/14 14:41:55 by ldeville         ###   ########.fr       */
+/*   Updated: 2023/12/15 15:06:53 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -102,5 +102,8 @@ void Server::handleInput(int i) {
 
 	// else if (err == 0)
 	// 	clientDisconnected(i);
+	parseBuffer(buffer, *this, i);
 	std::cout << _client[i]->getNickname() << i << buffer << std::endl;
 }
+
+void	Server::setPass(int i, std::string const & pass) { _client[i]->setPass(pass); };
