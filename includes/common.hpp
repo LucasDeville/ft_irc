@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/01 10:25:47 by ldeville          #+#    #+#             */
-/*   Updated: 2023/12/15 16:23:56 by ldeville         ###   ########.fr       */
+/*   Updated: 2023/12/18 13:38:06 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@
 #include <poll.h>
 #include <map>
 #include <vector>
+#include <fcntl.h>
 
 class Channel;
 class Server;

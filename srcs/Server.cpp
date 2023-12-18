@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:50:58 by ldeville          #+#    #+#             */
-/*   Updated: 2023/12/15 16:26:44 by ldeville         ###   ########.fr       */
+/*   Updated: 2023/12/18 15:00:26 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,10 @@ void Server::createServer() {
 		throw bindingFailed();
 	if (listen(sockfd, 5) == -1)
 		throw listenFailed();
+
+	if (fcntl(sockfd, F_SETFL, O_NONBLOCK) < 0) //non blocking
+		throw listenFailed();
+
 	memset(&poll, 0, sizeof(poll));
 	poll.fd = sockfd;
 	poll.events = POLLIN;
@@ -79,16 +83,20 @@ void Server::clientDisconnected(long unsigned int i){
 }
 
 void Server::acceptClient() {
-	int	clen, csock;
+	int csock;
 	sockaddr_in caddr;
 	pollfd pollFd;
 	
-	clen = sizeof(caddr);
-	if ((csock = accept(_serverSock, (struct sockaddr *) &caddr, (socklen_t *) &clen)) < 0)
+	socklen_t clen = sizeof(caddr);
+	if ((csock = accept(_serverSock, (struct sockaddr *) &caddr, &clen)) < 0)
 		throw acceptFailed();
 
+	// Set the client socket to non-blocking
+	int flags = fcntl( pollFd.fd, F_GETFL, 0 );
+	fcntl( pollFd.fd, F_SETFL, flags | O_NONBLOCK );
+
 	pollFd.fd = csock;
-	pollFd.events = POLLIN;
+	pollFd.events = POLLIN | POLLOUT;
 	pollFd.revents = 0;
 
 	/* create new Client */
@@ -96,6 +104,8 @@ void Server::acceptClient() {
 	Client *newClient = new Client(csock);
 	_client.push_back(newClient);
 	_channel["*"]->addClient(*newClient);
+	std::string	test =  "001 user :Welcome to the Internet Relay Network  127.0.0.1!\n";
+	send(pollFd.fd, test.c_str(), test.size(), 0);
 	std::cout << "New client : " << csock << std::endl;
 }
 
