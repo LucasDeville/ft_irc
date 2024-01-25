@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/15 15:54:31 by ldeville          #+#    #+#             */
-/*   Updated: 2023/12/15 16:29:42 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/01/25 14:17:19 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,7 @@ Channel::~Channel() {
 void	Channel::addClient(Client const & client) {
 
 	_client.push_back(client);
-	std::cout << client.getName() << " joined the channel " << this->_name << std::endl;
+	std::cout << client.getNickname() << " joined the channel " << this->_name << std::endl;
 }
 
 void	Channel::deleteClient(Client const & client) {

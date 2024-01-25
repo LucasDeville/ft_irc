@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:50:58 by ldeville          #+#    #+#             */
-/*   Updated: 2023/12/18 15:00:26 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/01/25 16:05:50 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -104,8 +104,6 @@ void Server::acceptClient() {
 	Client *newClient = new Client(csock);
 	_client.push_back(newClient);
 	_channel["*"]->addClient(*newClient);
-	std::string	test =  "001 user :Welcome to the Internet Relay Network  127.0.0.1!\n";
-	send(pollFd.fd, test.c_str(), test.size(), 0);
 	std::cout << "New client : " << csock << std::endl;
 }
 
@@ -117,7 +115,7 @@ void Server::handleInput(unsigned long int i) {
 	buffer[err] = '\0';
 	if (err == 0)
 	 	clientDisconnected(i);
-	parseBuffer(buffer, *this, i);
+	parseBuffer(buffer, i);
 	std::cout << _client[i]->getNickname() << " (" << i << "):" << buffer << std::endl;
 }
 
@@ -133,6 +131,88 @@ void Server::new_channel(Client const & client, std::string const & name)
 	_channel.insert( std::pair<std::string, Channel *>( name, channel ) );
 }
 
-
-
 void	Server::setPass(int i, std::string const & pass) { _client[i]->setPass(pass); };
+
+
+void	Server::parseBuffer(char buffer[2048], int client) {
+
+	std::cout << buffer << std::endl;
+	std::string	commands[3] = {"PASS", "NICK", "USER"};
+	int	(Server::*_cPtr[3])(std::string str, int client) = {&Server::cmdPass, &Server::cmdNick, &Server::cmdUser};
+
+
+
+	for(int i = 0; buffer[i]; i++) {
+		if (buffer[i] == '\n')
+			buffer[i] = 0; 
+	}
+	std::cout << buffer << std::endl;
+
+	for (int i = 0; i < 3; i++) {
+		if (!strncmp(buffer, commands[i].c_str(), commands[i].size())) {
+			if ((this->*_cPtr[i])(&buffer[commands[i].size() + 1], client))
+				std::cout << "Error command : " << commands[i] << std::endl;
+		}
+	}
+}
+
+int	Server::cmdPass(std::string pass, int c) {
+
+	if (_client[c]->getRegistered()) {
+		_client[c]->sendClient("Already registered");
+		return (0);
+	}
+
+	std::cout << "|" << pass << "|" << _passwd << std::endl;
+
+	if (!strcmp(pass.c_str(), _passwd.c_str())) {
+		_client[c]->setPass(pass);
+		if (!_client[c]->getRegistered())
+			_client[c]->notRegistered();
+		return (1);
+	}
+	_client[c]->sendClient("Wrong password");
+	return (0);
+}
+
+int	Server::cmdNick(std::string nick, int c) {
+
+	if (nick.empty()) {
+		_client[c]->sendClient("Empty nickname");
+		return (0);
+	}
+	_client[c]->setNickname(nick);
+	if (!_client[c]->getRegistered())
+		_client[c]->notRegistered();
+	return (1);
+}
+
+int	Server::cmdUser(std::string str, int c) {
+
+	if (_client[c]->getRegistered()) {
+		_client[c]->sendClient("Already registered");
+		return (0);
+	}
+	
+	int i = 0;
+	while (str[i] && str[i] == ' ')
+		i++;
+	int len = i;
+	while (str[len] && str[len] != ' ')
+		len++;
+
+	std::cout << "Username:|" << str.substr(i, len) << "|" << std::endl;
+	_client[c]->setUser(str.substr(i, len));
+
+	while (str[++i] && str[i] != ':');
+	i++;
+	len = i;
+	while (str[len] && str[len] != '\n')
+		len++;
+
+
+	std::cout << "Realname:|" << str.substr(i, len) << "|" << std::endl;
+	_client[c]->setRealname(str.substr(i, len));
+	_client[c]->notRegistered();
+	return (1);
+}

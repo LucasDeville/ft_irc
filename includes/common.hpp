@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/01 10:25:47 by ldeville          #+#    #+#             */
-/*   Updated: 2023/12/18 13:38:06 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/01/25 13:49:51 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,5 @@ class Client;
 #include "Channel.hpp"
 
 # define DEFAULT_CHANNEL "*"
-
-void	parseBuffer(char buffer[2048], Server const & server, int i);
 
 #endif
