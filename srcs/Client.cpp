@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:52:29 by ldeville          #+#    #+#             */
-/*   Updated: 2024/01/26 11:49:02 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/01/26 11:59:12 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,7 +36,7 @@ void    Client::sendClient(std::string str)
 void Client::notRegistered() {
 
 	if (_nickname.empty() || _username.empty() || _passwd.empty()) {
-		sendClient(":Waiting for registration...\n");
+		sendClient("Waiting for registration...\n");
 		return;
 	}
 	_registered = true;
