@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:43:05 by ldeville          #+#    #+#             */
-/*   Updated: 2024/01/25 15:59:50 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/01/26 11:36:41 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,6 +39,7 @@ public:
 	std::string const &	getNickname() const { return _nickname; };
 	std::string const &	getHostname() const { return _hostname; };
 	std::string const &	getPassword() const { return _passwd; };
+	std::string			getPrefix();
 	bool const &		getRegistered() const { return _registered; };
 	int const &			getMode() const { return _mode; };
 	int const &			getSocket() const { return _socket; };

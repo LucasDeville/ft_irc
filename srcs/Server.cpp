@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:50:58 by ldeville          #+#    #+#             */
-/*   Updated: 2024/01/25 16:05:50 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/01/26 11:40:25 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -116,7 +116,7 @@ void Server::handleInput(unsigned long int i) {
 	if (err == 0)
 	 	clientDisconnected(i);
 	parseBuffer(buffer, i);
-	std::cout << _client[i]->getNickname() << " (" << i << "):" << buffer << std::endl;
+	// std::cout << _client[i]->getNickname() << " (" << i << "):" << buffer << std::endl;
 }
 
 void Server::new_channel(std::string const & name)
@@ -125,10 +125,16 @@ void Server::new_channel(std::string const & name)
 	_channel.insert( std::pair<std::string, Channel *>( name, channel ) );
 }
 
-void Server::new_channel(Client const & client, std::string const & name)
+void Server::new_channel(Client & client, std::string const & name)
 {
 	Channel * channel = new Channel(name, client);
 	_channel.insert( std::pair<std::string, Channel *>( name, channel ) );
+}
+
+void Server::join_channel(Client & client, std::string const & name)
+{
+	if (_channel.find(name) != _channel.end())
+		_channel[name]->addClient(client);
 }
 
 void	Server::setPass(int i, std::string const & pass) { _client[i]->setPass(pass); };
@@ -137,8 +143,8 @@ void	Server::setPass(int i, std::string const & pass) { _client[i]->setPass(pass
 void	Server::parseBuffer(char buffer[2048], int client) {
 
 	std::cout << buffer << std::endl;
-	std::string	commands[3] = {"PASS", "NICK", "USER"};
-	int	(Server::*_cPtr[3])(std::string str, int client) = {&Server::cmdPass, &Server::cmdNick, &Server::cmdUser};
+	std::string	commands[4] = {"PASS", "NICK", "USER", "JOIN"}; //CHANGE number for below 
+	int	(Server::*_cPtr[4])(std::string str, int client) = {&Server::cmdPass, &Server::cmdNick, &Server::cmdUser, &Server::cmdJoin};
 
 
 
@@ -148,7 +154,7 @@ void	Server::parseBuffer(char buffer[2048], int client) {
 	}
 	std::cout << buffer << std::endl;
 
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < 4; i++) {
 		if (!strncmp(buffer, commands[i].c_str(), commands[i].size())) {
 			if ((this->*_cPtr[i])(&buffer[commands[i].size() + 1], client))
 				std::cout << "Error command : " << commands[i] << std::endl;
@@ -163,8 +169,11 @@ int	Server::cmdPass(std::string pass, int c) {
 		return (0);
 	}
 
+	if (pass[0] == ':')
+		pass = &pass[1];
+		
 	std::cout << "|" << pass << "|" << _passwd << std::endl;
-
+	
 	if (!strcmp(pass.c_str(), _passwd.c_str())) {
 		_client[c]->setPass(pass);
 		if (!_client[c]->getRegistered())
@@ -214,5 +223,19 @@ int	Server::cmdUser(std::string str, int c) {
 	std::cout << "Realname:|" << str.substr(i, len) << "|" << std::endl;
 	_client[c]->setRealname(str.substr(i, len));
 	_client[c]->notRegistered();
+	return (1);
+}
+
+int	Server::cmdJoin(std::string str, int c) {
+
+	if (!_client[c]->getRegistered())
+		return 0;
+
+	if (_channel.find(str) == _channel.end())
+		new_channel(*_client[c], str);
+	else
+		join_channel(*_client[c], str);
+
+
 	return (1);
 }

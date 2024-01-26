@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:48:01 by ldeville          #+#    #+#             */
-/*   Updated: 2024/01/25 15:52:16 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/01/26 11:40:36 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,8 @@ public:
 	void	handleInput(long unsigned int i);
 	void	clientDisconnected(long unsigned int i);
 	void 	new_channel(std::string const & name);
-	void 	new_channel(Client const & client, std::string const & name);
+	void 	new_channel(Client & client, std::string const & name);
+	void 	join_channel(Client & client, std::string const & name);
 
 	void	setPass(int i, std::string const & pass);
 
@@ -49,6 +50,7 @@ public:
 	int		cmdPass(std::string pass, int c);
 	int		cmdNick(std::string nick, int c);
 	int		cmdUser(std::string str, int c);
+	int		cmdJoin(std::string str, int c);
 };
 
 #endif
