@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:50:58 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/20 16:14:08 by bpleutin         ###   ########.fr       */
+/*   Updated: 2024/02/20 21:43:49 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -168,31 +168,36 @@ void	Server::parseBuffer(char buffer[2048], int client) {
 int	Server::cmdPass(std::string pass, int c) {
 
 	if (_client[c]->getRegistered()) {
-		_client[c]->sendClient("Already registered");
+		_client[c]->sendClient("462", "You are already registered");
 		return (0);
 	}
 
-	if (pass[0] == ':')
-		pass = &pass[1];
-		
-	std::cout << "|" << pass << "|" << _passwd << std::endl;
-	
+	//Paramètre vide - 461
+
 	if (!strcmp(pass.c_str(), _passwd.c_str())) {
 		_client[c]->setPass(pass);
 		if (!_client[c]->getRegistered())
 			_client[c]->notRegistered();
 		return (1);
 	}
-	_client[c]->sendClient("Wrong password");
+	_client[c]->sendClient("997", "Wrong password !");
 	return (0);
 }
 
 int	Server::cmdNick(std::string nick, int c) {
 
-	if (nick.empty()) {
-		_client[c]->sendClient("Empty nickname");
-		return (0);
+	if (!_client[c]->getAuth())
+		return (_client[c]->sendClient("998", "You need to authentificate with the PASS."), 0);
+	if (nick.empty())
+		return (_client[c]->sendClient("431", "Empty nickname !"), 0);
+
+	for (int i = 0; nick[i]; i++) {
+		if (!isalnum(nick[i]) && nick[i] != '-' && nick[i] != '\r')
+			return (_client[c]->sendClient("432", "The nickname can't contain special character !"), 0);
 	}
+
+	//Nickname already use - 433
+
 	_client[c]->setNickname(nick);
 	if (!_client[c]->getRegistered())
 		_client[c]->notRegistered();
@@ -201,11 +206,13 @@ int	Server::cmdNick(std::string nick, int c) {
 
 int	Server::cmdUser(std::string str, int c) {
 
-	if (_client[c]->getRegistered()) {
-		_client[c]->sendClient("Already registered");
-		return (0);
-	}
+	if (!_client[c]->getAuth())
+		return (_client[c]->sendClient("998", "You need to authentificate with the PASS."), 0);
+	if (_client[c]->getRegistered()) 
+		return (_client[c]->sendClient("462", "You are already registered"), 0);
 	
+	// Pas assez de paramètre (4) - 461
+	 
 	int i = 0;
 	while (str[i] && str[i] == ' ')
 		i++;
@@ -232,24 +239,35 @@ int	Server::cmdUser(std::string str, int c) {
 int	Server::cmdJoin(std::string str, int c) {
 
 	if (!_client[c]->getRegistered())
-		return 0;
+		return(_client[c]->sendClient("451", "You are not registered"), 0);
+
+	// Pas assez de paramètre (1) - 461
+
+	//Si arg = "0" - quitter tous les channels
 
 	if (_channel.find(str) == _channel.end())
 		new_channel(*_client[c], str);
 	else
 		join_channel(*_client[c], str);
 
+/*
+	sendClient("", _client[c]->getUserPrefix() + "JOIN " + ChannelName + "\n");
+	_client[c]->sendClient("332", this->_client[c]->getNickName(), ChannelName + " :" + it->second->getTopic()));
+	_client[c]->sendClient("353", this->_client[c]->getNickName() + " = " + ChannelName, it->second->listAllUsers()));
+	_client[c]->sendClient("353", this->_client[c]->getNickName() + " " + ChannelName, ":End of NAMES list"));
+*/
 
 	return (1);
 }
 
 int Server::cmdLeave(std::string str, int c) {
 
+//same as QUIT ? Leave = quit ?
 	if (!_client[c]->getRegistered())
-		return 0;
+		return(_client[c]->sendClient("451", "You are not registered"), 0);
 	if (_client[c]->getChannel() == NULL)
 	{
-		_client[c]->sendClient("Not in any channel.");
+		_client[c]->sendClient("464", "Not in any channel.");
 		return 0;	
 	}
 		
@@ -278,31 +296,35 @@ int Server::cmdQuit(std::string str, int c) {
 int Server::cmdOper(std::string str, int c) {
 
 	if (!_client[c]->getRegistered())
-		return 0;
+		return(_client[c]->sendClient("451", "You are not registered"), 0);
 	if (_client[c]->getChannel() == NULL)
 	{
-		_client[c]->sendClient("Not in any channel.");
+		_client[c]->sendClient("464", "Not in any channel."); //revoir code
 		return 0;	
 	}
 	if (_client[c]->getMode())
 	{
-		_client[c]->sendClient("Already an operator of this channel.");
+		_client[c]->sendClient("464", "Already an operator of this channel."); //revoir code
 		return 0;
 	}
 
 	std::map<std::string, Channel *>::iterator it;
 	(void) str;
 	
+	//droit opérateur personnel est non sur chaque channel ?
+	//Need un password transmis via str ?
+
 	for (it = _channel.begin(); it != _channel.end(); ++it)
 	{
     	if (it->second == _client[c]->getChannel())
 		{
 			if (!it->second->getOperatorList().empty())
 			{
-				_client[c]->sendClient("Denied. If you want operator rights, ask an operator.");
+				_client[c]->sendClient("464", "Denied. If you want operator rights, ask an operator."); //revoir code
 				return 0;
 			}
 			it->second->getOperatorList().push_back(*_client[c]);
+			_client[c]->sendClient("381", "You have now operator rights !");
 			_client[c]->setMode(1);
 		}
 	}
@@ -312,15 +334,15 @@ int Server::cmdOper(std::string str, int c) {
 
 int Server::cmdTopic(std::string str, int c) {
 	if (!_client[c]->getRegistered())
-		return 0;
+		return(_client[c]->sendClient("451", "You are not registered"), 0);
 	if (_client[c]->getChannel() == NULL)
 	{
-		_client[c]->sendClient("Not in any channel.");
+		_client[c]->sendClient("442", "Not in any channel.");
 		return 0;	
 	}
 	if (!_client[c]->getMode())
 	{
-		_client[c]->sendClient("You don't have the rights for this.");
+		_client[c]->sendClient("482", "You don't have the rights for this.");
 		return 0;
 	}
 
@@ -331,7 +353,7 @@ int Server::cmdTopic(std::string str, int c) {
     	if (it->second == _client[c]->getChannel())
 		{
 			if (str.empty())
-				_client[c]->sendClient(it->second->getTopic());
+				_client[c]->sendClient("332", it->second->getTopic()); //verif si topic vide ? Si oui 331
 			else
 				it->second->addTopic(str);
 		}
@@ -342,15 +364,55 @@ int Server::cmdTopic(std::string str, int c) {
 
 int Server::cmdKick(std::string str, int c) {
 	if (!_client[c]->getRegistered())
-		return 0;
+		return(_client[c]->sendClient("451", "You are not registered"), 0);
 	if (_client[c]->getChannel() == NULL)
 	{
-		_client[c]->sendClient("Not in any channel.");
+		_client[c]->sendClient("442", "Not in any channel.");
 		return 0;	
 	}
 	if (!_client[c]->getMode())
 	{
-		_client[c]->sendClient("You don't have the rights for this.");
+		_client[c]->sendClient("482", "You don't have the rights for this.");
+		return 0;
+	}
+	
+	for (unsigned int i = 0; i < _client.size(); i++)
+	{
+		if (_client[i]->getNickname() == str)
+		{
+			// _client[i]->sendClient("You have been kicked by " + _client[c]->getNickname());
+			// _client[c]->sendClient("Successfully kicked " + _client[i]->getNickname());
+
+			//No message ? except "KICK channelName"
+
+			// send channel "_client[i] has been kicked by _client[c]"
+			clientDisconnected(i);
+			return 1;
+		}
+	}
+	
+	_client[c]->sendClient("441", "Wrong username or not in that channel.");
+
+	//Channel doest not exist ? - 403
+	
+	return 0;
+}
+
+int Server::cmdPM(std::string str, int c) {
+	if (!_client[c]->getRegistered())
+		return(_client[c]->sendClient("451", "You are not registered"), 0);
+	
+
+	//On peut envoyer des messages prive pas juste channel
+	/*if (_client[c]->getChannel() == NULL)
+	{
+		_client[c]->sendClient("442", "Not in any channel.");
+		return 0;	
+	}
+
+	if (!_client[c]->getMode())
+	{
+		_client[c]->sendClient("482", "You don't have the rights for this.");
 		return 0;
 	}
 	
@@ -366,6 +428,7 @@ int Server::cmdKick(std::string str, int c) {
 		}
 	}
 	
-	_client[c]->sendClient("Wrong username.");
+	_client[c]->sendClient("Wrong username.");*/
 	return 0;
 }
+

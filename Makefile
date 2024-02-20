@@ -11,7 +11,7 @@ OBJS_EXEC = ${SRCS:.cpp=.o}
 EXEC = ircserv
 
 # NICK ldeville
-# USER ldeville 8 * :Lucas Deville
+# USER ldeville * * :Lucas Deville
 # PASS 123
 
 

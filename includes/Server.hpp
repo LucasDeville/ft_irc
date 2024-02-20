@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:48:01 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/20 16:12:32 by bpleutin         ###   ########.fr       */
+/*   Updated: 2024/02/20 20:48:05 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,10 +58,10 @@ public:
 	int		cmdOper(std::string str, int c);
 	int		cmdTopic(std::string str, int c);
 	int		cmdKick(std::string str, int c);
+	int		cmdPM(std::string str, int c);
 	//to-do
 	int		cmdInv(std::string str, int c);
 	int		cmdMode(std::string str, int c); // examples: MODE +i, MODE -i... MODE alone displays channel's modes. (MODE i displays i ?)
-	int		cmdPM(std::string str, int c);
 	int		cmdSendF(std::string str, int c);
 	int		cmdGetF(std::string str, int c);
 	int		cmdBot(std::string str, int c);
