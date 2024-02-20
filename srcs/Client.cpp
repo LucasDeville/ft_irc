@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
+/*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:52:29 by ldeville          #+#    #+#             */
-/*   Updated: 2024/01/26 11:59:12 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/20 16:13:19 by bpleutin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@ Client::Client() {
 
 }
 
-Client::Client(int socket) : _hostname("localhost"), _socket(socket), _registered(false) {
+Client::Client(int socket) : _hostname("localhost"), _mode(0), _socket(socket), _registered(false), _channel(NULL) {
 
 }
 
@@ -47,4 +47,12 @@ std::string Client::getPrefix()
 {
     std::string str = ":" + _nickname + (_username.empty() ? "" : "!" + _username) + (_hostname.empty() ? "" : "@" + _hostname);
     return str;
+}
+
+void	Client::setChannel(Channel *channel) {
+	_channel = channel;
+}
+
+Channel		*Client::getChannel() const {
+	return _channel;
 }

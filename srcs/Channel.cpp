@@ -3,21 +3,30 @@
 /*                                                        :::      ::::::::   */
 /*   Channel.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
+/*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/15 15:54:31 by ldeville          #+#    #+#             */
-/*   Updated: 2024/01/26 11:40:56 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/20 15:43:23 by bpleutin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Channel.hpp"
 
-Channel::Channel(std::string const & name) : _name(name) {
-	
+Channel::Channel(std::string const & name) : _name(name), _topic("") {
+	_mode.insert(std::pair<const char, int>('i', 0));
+	_mode.insert(std::pair<const char, int>('t', 0));
+	_mode.insert(std::pair<const char, int>('k', 0));
+	_mode.insert(std::pair<const char, int>('o', 0));
+	_mode.insert(std::pair<const char, int>('l', 0));
 }
 
-Channel::Channel(std::string const & name, Client & client) : _name(name) {
+Channel::Channel(std::string const & name, Client & client) : _name(name), _topic("") {
 	addClient(client);
+	_mode.insert(std::pair<const char, int>('i', 0));
+	_mode.insert(std::pair<const char, int>('t', 0));
+	_mode.insert(std::pair<const char, int>('k', 0));
+	_mode.insert(std::pair<const char, int>('o', 0));
+	_mode.insert(std::pair<const char, int>('l', 0));
 }
 
 Channel::~Channel() {

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
+/*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:43:05 by ldeville          #+#    #+#             */
-/*   Updated: 2024/01/26 11:36:41 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/20 15:18:52 by bpleutin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,7 @@ private:
 	int			_mode;
 	int			_socket;
 	bool		_registered;
+	Channel*	_channel;
 	Client();
 
 public:
@@ -43,12 +44,17 @@ public:
 	bool const &		getRegistered() const { return _registered; };
 	int const &			getMode() const { return _mode; };
 	int const &			getSocket() const { return _socket; };
+	
 	void				setUser(std::string const & user) { _username = user; };
 	void				setRealname(std::string const & real) { _realname = real; };
 	void				setNickname(std::string const & nick) { _nickname = nick; };
 	void				setPass(std::string const & pass) { _passwd = pass; };
+	void				setMode(int m) { _mode = m; };
+	
 	void				notRegistered();
 	void				sendClient(std::string str);
+	void				setChannel(Channel *channel);
+	Channel				*getChannel(void) const;
 };
 
 #endif

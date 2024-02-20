@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
+/*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:50:58 by ldeville          #+#    #+#             */
-/*   Updated: 2024/01/26 11:40:25 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/20 16:14:08 by bpleutin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -134,7 +134,10 @@ void Server::new_channel(Client & client, std::string const & name)
 void Server::join_channel(Client & client, std::string const & name)
 {
 	if (_channel.find(name) != _channel.end())
+	{
 		_channel[name]->addClient(client);
+		client.setChannel(_channel[name]);
+	}
 }
 
 void	Server::setPass(int i, std::string const & pass) { _client[i]->setPass(pass); };
@@ -238,4 +241,131 @@ int	Server::cmdJoin(std::string str, int c) {
 
 
 	return (1);
+}
+
+int Server::cmdLeave(std::string str, int c) {
+
+	if (!_client[c]->getRegistered())
+		return 0;
+	if (_client[c]->getChannel() == NULL)
+	{
+		_client[c]->sendClient("Not in any channel.");
+		return 0;	
+	}
+		
+	(void) str;
+	std::map<std::string, Channel *>::iterator it;
+
+	for (it = _channel.begin(); it != _channel.end(); ++it)
+	{
+    	if (it->second == _client[c]->getChannel())
+		{
+			_client[c]->setChannel(NULL);
+			_client[c]->setMode(0);
+			_channel.erase(it->first);
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int Server::cmdQuit(std::string str, int c) {
+	(void) str;
+	clientDisconnected(c);
+	return 1;
+}
+
+int Server::cmdOper(std::string str, int c) {
+
+	if (!_client[c]->getRegistered())
+		return 0;
+	if (_client[c]->getChannel() == NULL)
+	{
+		_client[c]->sendClient("Not in any channel.");
+		return 0;	
+	}
+	if (_client[c]->getMode())
+	{
+		_client[c]->sendClient("Already an operator of this channel.");
+		return 0;
+	}
+
+	std::map<std::string, Channel *>::iterator it;
+	(void) str;
+	
+	for (it = _channel.begin(); it != _channel.end(); ++it)
+	{
+    	if (it->second == _client[c]->getChannel())
+		{
+			if (!it->second->getOperatorList().empty())
+			{
+				_client[c]->sendClient("Denied. If you want operator rights, ask an operator.");
+				return 0;
+			}
+			it->second->getOperatorList().push_back(*_client[c]);
+			_client[c]->setMode(1);
+		}
+	}
+	
+	return 1;
+}
+
+int Server::cmdTopic(std::string str, int c) {
+	if (!_client[c]->getRegistered())
+		return 0;
+	if (_client[c]->getChannel() == NULL)
+	{
+		_client[c]->sendClient("Not in any channel.");
+		return 0;	
+	}
+	if (!_client[c]->getMode())
+	{
+		_client[c]->sendClient("You don't have the rights for this.");
+		return 0;
+	}
+
+	std::map<std::string, Channel *>::iterator it;
+	
+	for (it = _channel.begin(); it != _channel.end(); it++)
+	{
+    	if (it->second == _client[c]->getChannel())
+		{
+			if (str.empty())
+				_client[c]->sendClient(it->second->getTopic());
+			else
+				it->second->addTopic(str);
+		}
+	}
+	
+	return 1;
+}
+
+int Server::cmdKick(std::string str, int c) {
+	if (!_client[c]->getRegistered())
+		return 0;
+	if (_client[c]->getChannel() == NULL)
+	{
+		_client[c]->sendClient("Not in any channel.");
+		return 0;	
+	}
+	if (!_client[c]->getMode())
+	{
+		_client[c]->sendClient("You don't have the rights for this.");
+		return 0;
+	}
+	
+	for (unsigned int i = 0; i < _client.size(); i++)
+	{
+		if (_client[i]->getNickname() == str)
+		{
+			_client[i]->sendClient("You have been kicked by " + _client[c]->getNickname());
+			_client[c]->sendClient("Successfully kicked " + _client[i]->getNickname());
+			// send channel "_client[i] has been kicked by _client[c]"
+			clientDisconnected(i);
+			return 1;
+		}
+	}
+	
+	_client[c]->sendClient("Wrong username.");
+	return 0;
 }
