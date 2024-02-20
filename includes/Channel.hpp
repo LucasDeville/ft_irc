@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Channel.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
+/*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/15 15:50:13 by ldeville          #+#    #+#             */
-/*   Updated: 2024/01/26 11:40:10 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/20 15:42:48 by bpleutin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,10 @@ class Channel {
 private:
 
 	std::string				_name;
-	std::vector<Client>	_client;
+	std::string				_topic;
+	std::vector<Client>		_client;
+	std::vector<Client> 	_operator;
+	std::map<const char, int>	_mode;
 	Channel();
 
 public:
@@ -30,8 +33,13 @@ public:
 	~Channel();
 
 	void				addClient(Client & client);
+	void				addTopic(std::string str) { _topic = str; };
 	void				deleteClient(Client & client);
 	std::string const &	getChannelName() const { return _name; };
+
+	std::vector<Client> getClientList() const { return _client; };
+	std::vector<Client> getOperatorList() const { return _operator; };
+	std::string			getTopic() const { return _topic; };
 
 };
 

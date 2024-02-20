@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
+/*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:48:01 by ldeville          #+#    #+#             */
-/*   Updated: 2024/01/26 11:40:36 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/20 16:12:32 by bpleutin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,6 +51,20 @@ public:
 	int		cmdNick(std::string nick, int c);
 	int		cmdUser(std::string str, int c);
 	int		cmdJoin(std::string str, int c);
+	
+	//done but not tested
+	int		cmdLeave(std::string str, int c);
+	int		cmdQuit(std::string str, int c);
+	int		cmdOper(std::string str, int c);
+	int		cmdTopic(std::string str, int c);
+	int		cmdKick(std::string str, int c);
+	//to-do
+	int		cmdInv(std::string str, int c);
+	int		cmdMode(std::string str, int c); // examples: MODE +i, MODE -i... MODE alone displays channel's modes. (MODE i displays i ?)
+	int		cmdPM(std::string str, int c);
+	int		cmdSendF(std::string str, int c);
+	int		cmdGetF(std::string str, int c);
+	int		cmdBot(std::string str, int c);
 };
 
 #endif
