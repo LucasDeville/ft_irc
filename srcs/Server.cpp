@@ -6,11 +6,18 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:50:58 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/21 15:08:34 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/21 15:50:47 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
+
+int alive;
+
+void handleCtrl(int sig) {
+	if (sig == SIGINT)
+		alive = 0;
+}
 
 Server::Server() {
 	
@@ -18,14 +25,20 @@ Server::Server() {
 
 Server::Server(int port, std::string passwd) : _port(port), _passwd(passwd) {
 
+	alive = 1;
 	// new_channel( DEFAULT_CHANNEL );
 }
 
 Server::~Server() {
-	
+	std::vector<Client *>::iterator it = _client.begin();
+	while (it != _client.end()) {
+		delete (*it);
+		it++;
+	}
 }
 
 void Server::createServer() {
+	signal(SIGINT, handleCtrl);
 	sockaddr_in saddr;
 	pollfd		poll;
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -54,17 +67,12 @@ void Server::createServer() {
 }
 
 void Server::serverLoop() {
-	while (1)
+	while (alive)
 	{
 		if (poll(_pollfd.data(), _pollfd.size(), -1) == -1)
 			throw pollFailed();
 		for (long unsigned int i = 0; i < _pollfd.size(); i++)
 		{
-			if (_pollfd[i].revents & POLLHUP)
-			{
-				clientDisconnected(i);
-				continue;
-			}
 			if (_pollfd[i].revents & POLLIN)
 			{
 				if (_pollfd[i].fd == _serverSock)
@@ -81,6 +89,7 @@ void Server::clientDisconnected(long unsigned int i){
 	close(_pollfd[i].fd);
 	close(_client[i]->getSocket());
 	_pollfd.erase(_pollfd.begin() + i);
+	delete _client[i];
 	_client.erase(_client.begin() + i);
 }
 
@@ -88,16 +97,19 @@ void Server::acceptClient() {
 	int csock;
 	sockaddr_in caddr;
 	pollfd pollFd;
-	
+
 	socklen_t clen = sizeof(caddr);
 	if ((csock = accept(_serverSock, (struct sockaddr *) &caddr, &clen)) < 0)
 		throw acceptFailed();
 
+	// Set the client socket to non-blocking
+	int flags = fcntl( csock, F_GETFL, 0 );
+	fcntl( csock, F_SETFL, flags | O_NONBLOCK );
+
 	pollFd.fd = csock;
-	pollFd.events = POLLIN | POLLOUT;
+	pollFd.events = POLLIN;
 	pollFd.revents = 0;
 
-	/* create new Client */
 	_pollfd.push_back(pollFd);
 	Client *newClient = new Client(csock);
 	_client.push_back(newClient);
@@ -113,8 +125,9 @@ void Server::handleInput(unsigned long int i) {
 	buffer[err] = '\0';
 	if (err == 0)
 	 	clientDisconnected(i);
-	std::string str(buffer, strlen(buffer) - 1);
-	parseBuffer(str, i);
+	//std::string str(buffer, strlen(buffer) - 1);
+	parseBuffer(buffer, i);
+	memset(&buffer, 0, 8192);
 }
 
 void Server::new_channel(std::string const & name)

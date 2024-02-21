@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/01 10:25:47 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/21 11:31:11 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/21 15:45:31 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,7 @@
 #include <map>
 #include <vector>
 #include <fcntl.h>
+#include <signal.h>
 
 class Channel;
 class Parse;
