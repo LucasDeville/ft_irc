@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:50:58 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/20 21:43:49 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/21 10:42:43 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -108,14 +108,15 @@ void Server::acceptClient() {
 }
 
 void Server::handleInput(unsigned long int i) {
-	char buffer[2048];
+	char buffer[8192];
 	int err = recv(_client[i]->getSocket(), &buffer, sizeof(buffer), 0);
 	if (err < 0)
 		throw recvFailed();
 	buffer[err] = '\0';
 	if (err == 0)
 	 	clientDisconnected(i);
-	parseBuffer(buffer, i);
+	std::string str(buffer, strlen(buffer) - 1);
+	parseBuffer(str, i);
 	// std::cout << _client[i]->getNickname() << " (" << i << "):" << buffer << std::endl;
 }
 
@@ -140,14 +141,11 @@ void Server::join_channel(Client & client, std::string const & name)
 	}
 }
 
-void	Server::setPass(int i, std::string const & pass) { _client[i]->setPass(pass); };
-
-
-void	Server::parseBuffer(char buffer[2048], int client) {
+void	Server::parseBuffer(std::string buffer, int client) {
 
 	std::cout << buffer << std::endl;
 	std::string	commands[4] = {"PASS", "NICK", "USER", "JOIN"}; //CHANGE number for below 
-	int	(Server::*_cPtr[4])(std::string str, int client) = {&Server::cmdPass, &Server::cmdNick, &Server::cmdUser, &Server::cmdJoin};
+	int	(Server::*_cPtr[4])(Parse parse, int client) = {&Server::cmdPass, &Server::cmdNick, &Server::cmdUser, &Server::cmdJoin};
 
 
 
@@ -157,16 +155,27 @@ void	Server::parseBuffer(char buffer[2048], int client) {
 	}
 	std::cout << buffer << std::endl;
 
+	Parse parse(buffer);
+	
 	for (int i = 0; i < 4; i++) {
-		if (!strncmp(buffer, commands[i].c_str(), commands[i].size())) {
-			if ((this->*_cPtr[i])(&buffer[commands[i].size() + 1], client))
+		if (parse.cmd.compare(commands[i]) == 0) {
+
+			std::cout << "CMD : " << parse.cmd << std::endl;
+			for (long unsigned int i = 0; i < parse.args.size(); i++)
+				std::cout << parse.args[i] << std::endl;
+			
+
+			if (!(this->*_cPtr[i])(parse, client))
 				std::cout << "Error command : " << commands[i] << std::endl;
+				
 		}
 	}
 }
 
-int	Server::cmdPass(std::string pass, int c) {
+int	Server::cmdPass(Parse parse, int c) {
 
+	if (_client[c]->getAuth())
+		return (_client[c]->sendClient("998", "You are already authentifiate."), 0);
 	if (_client[c]->getRegistered()) {
 		_client[c]->sendClient("462", "You are already registered");
 		return (0);
@@ -174,69 +183,54 @@ int	Server::cmdPass(std::string pass, int c) {
 
 	//Paramètre vide - 461
 
-	if (!strcmp(pass.c_str(), _passwd.c_str())) {
-		_client[c]->setPass(pass);
-		if (!_client[c]->getRegistered())
-			_client[c]->notRegistered();
+	if (!strcmp(parse.args[0].c_str(), _passwd.c_str())) {
+		_client[c]->setPass(parse.args[0]);
+		_client[c]->setAuth(true);
 		return (1);
 	}
 	_client[c]->sendClient("997", "Wrong password !");
 	return (0);
 }
 
-int	Server::cmdNick(std::string nick, int c) {
+int	Server::cmdNick(Parse parse, int c) {
 
 	if (!_client[c]->getAuth())
 		return (_client[c]->sendClient("998", "You need to authentificate with the PASS."), 0);
-	if (nick.empty())
+	if (parse.args[0].empty())
 		return (_client[c]->sendClient("431", "Empty nickname !"), 0);
 
-	for (int i = 0; nick[i]; i++) {
-		if (!isalnum(nick[i]) && nick[i] != '-' && nick[i] != '\r')
+	for (int i = 0; parse.args[0][i]; i++) {
+		if (!isalnum(parse.args[0][i]) && parse.args[0][i] != '-' && parse.args[0][i] != '\r')
 			return (_client[c]->sendClient("432", "The nickname can't contain special character !"), 0);
 	}
 
 	//Nickname already use - 433
 
-	_client[c]->setNickname(nick);
+	_client[c]->setNickname(parse.args[0]);
 	if (!_client[c]->getRegistered())
 		_client[c]->notRegistered();
 	return (1);
 }
 
-int	Server::cmdUser(std::string str, int c) {
+int	Server::cmdUser(Parse parse, int c) {
 
 	if (!_client[c]->getAuth())
 		return (_client[c]->sendClient("998", "You need to authentificate with the PASS."), 0);
 	if (_client[c]->getRegistered()) 
 		return (_client[c]->sendClient("462", "You are already registered"), 0);
+	if (parse.args.size() < 4)
+		return (_client[c]->sendClient("461", "Not enought parameter !"), 0);
+
+	std::cout << "Username:|" << parse.args[0] << "|" << std::endl;
+	_client[c]->setUser(parse.args[0]);
 	
-	// Pas assez de paramètre (4) - 461
-	 
-	int i = 0;
-	while (str[i] && str[i] == ' ')
-		i++;
-	int len = i;
-	while (str[len] && str[len] != ' ')
-		len++;
-
-	std::cout << "Username:|" << str.substr(i, len) << "|" << std::endl;
-	_client[c]->setUser(str.substr(i, len));
-
-	while (str[++i] && str[i] != ':');
-	i++;
-	len = i;
-	while (str[len] && str[len] != '\n')
-		len++;
-
-
-	std::cout << "Realname:|" << str.substr(i, len) << "|" << std::endl;
-	_client[c]->setRealname(str.substr(i, len));
+	std::cout << "Realname:|" << parse.args[3] << "|" << std::endl;
+	_client[c]->setRealname(parse.args[3]);
 	_client[c]->notRegistered();
 	return (1);
 }
 
-int	Server::cmdJoin(std::string str, int c) {
+int	Server::cmdJoin(Parse parse, int c) {
 
 	if (!_client[c]->getRegistered())
 		return(_client[c]->sendClient("451", "You are not registered"), 0);
@@ -245,22 +239,15 @@ int	Server::cmdJoin(std::string str, int c) {
 
 	//Si arg = "0" - quitter tous les channels
 
-	if (_channel.find(str) == _channel.end())
-		new_channel(*_client[c], str);
+	if (_channel.find(parse.args[0]) == _channel.end())
+		new_channel(*_client[c], parse.args[0]);
 	else
-		join_channel(*_client[c], str);
-
-/*
-	sendClient("", _client[c]->getUserPrefix() + "JOIN " + ChannelName + "\n");
-	_client[c]->sendClient("332", this->_client[c]->getNickName(), ChannelName + " :" + it->second->getTopic()));
-	_client[c]->sendClient("353", this->_client[c]->getNickName() + " = " + ChannelName, it->second->listAllUsers()));
-	_client[c]->sendClient("353", this->_client[c]->getNickName() + " " + ChannelName, ":End of NAMES list"));
-*/
+		join_channel(*_client[c], parse.args[0]);
 
 	return (1);
 }
 
-int Server::cmdLeave(std::string str, int c) {
+int Server::cmdLeave(Parse parse, int c) {
 
 //same as QUIT ? Leave = quit ?
 	if (!_client[c]->getRegistered())
@@ -270,8 +257,8 @@ int Server::cmdLeave(std::string str, int c) {
 		_client[c]->sendClient("464", "Not in any channel.");
 		return 0;	
 	}
-		
-	(void) str;
+	
+	(void) parse;
 	std::map<std::string, Channel *>::iterator it;
 
 	for (it = _channel.begin(); it != _channel.end(); ++it)
@@ -287,13 +274,13 @@ int Server::cmdLeave(std::string str, int c) {
 	return 0;
 }
 
-int Server::cmdQuit(std::string str, int c) {
-	(void) str;
+int Server::cmdQuit(Parse parse, int c) {
+	(void) parse;
 	clientDisconnected(c);
 	return 1;
 }
 
-int Server::cmdOper(std::string str, int c) {
+int Server::cmdOper(Parse parse, int c) {
 
 	if (!_client[c]->getRegistered())
 		return(_client[c]->sendClient("451", "You are not registered"), 0);
@@ -309,7 +296,7 @@ int Server::cmdOper(std::string str, int c) {
 	}
 
 	std::map<std::string, Channel *>::iterator it;
-	(void) str;
+	(void) parse;
 	
 	//droit opérateur personnel est non sur chaque channel ?
 	//Need un password transmis via str ?
@@ -332,7 +319,7 @@ int Server::cmdOper(std::string str, int c) {
 	return 1;
 }
 
-int Server::cmdTopic(std::string str, int c) {
+int Server::cmdTopic(Parse parse, int c) {
 	if (!_client[c]->getRegistered())
 		return(_client[c]->sendClient("451", "You are not registered"), 0);
 	if (_client[c]->getChannel() == NULL)
@@ -352,17 +339,17 @@ int Server::cmdTopic(std::string str, int c) {
 	{
     	if (it->second == _client[c]->getChannel())
 		{
-			if (str.empty())
+			if (parse.args[0].empty())
 				_client[c]->sendClient("332", it->second->getTopic()); //verif si topic vide ? Si oui 331
 			else
-				it->second->addTopic(str);
+				it->second->addTopic(parse.args[0]);
 		}
 	}
 	
 	return 1;
 }
 
-int Server::cmdKick(std::string str, int c) {
+int Server::cmdKick(Parse parse, int c) {
 	if (!_client[c]->getRegistered())
 		return(_client[c]->sendClient("451", "You are not registered"), 0);
 	if (_client[c]->getChannel() == NULL)
@@ -378,7 +365,7 @@ int Server::cmdKick(std::string str, int c) {
 	
 	for (unsigned int i = 0; i < _client.size(); i++)
 	{
-		if (_client[i]->getNickname() == str)
+		if (_client[i]->getNickname() == parse.args[0])
 		{
 			// _client[i]->sendClient("You have been kicked by " + _client[c]->getNickname());
 			// _client[c]->sendClient("Successfully kicked " + _client[i]->getNickname());
@@ -398,10 +385,11 @@ int Server::cmdKick(std::string str, int c) {
 	return 0;
 }
 
-int Server::cmdPM(std::string str, int c) {
+int Server::cmdPM(Parse parse, int c) {
 	if (!_client[c]->getRegistered())
 		return(_client[c]->sendClient("451", "You are not registered"), 0);
 	
+	(void) parse;
 
 	//On peut envoyer des messages prive pas juste channel
 	/*if (_client[c]->getChannel() == NULL)

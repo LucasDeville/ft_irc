@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Channel.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/15 15:54:31 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/20 15:43:23 by bpleutin         ###   ########.fr       */
+/*   Updated: 2024/02/21 10:34:24 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,13 @@ void	Channel::addClient(Client & client) {
 
 	_client.push_back(client);
 	std::cout << client.getNickname() << " joined the channel " << this->_name << std::endl;
-	client.sendClient(("JOIN :" + _name + "\n"));
+	client.sendClient("", ("JOIN :" + _name + "\n"));
+/*
+	sendClient("", _client[c]->getUserPrefix() + "JOIN " + ChannelName + "\n");
+	_client[c]->sendClient("332", this->_client[c]->getNickName(), ChannelName + " :" + it->second->getTopic()));
+	_client[c]->sendClient("353", this->_client[c]->getNickName() + " = " + ChannelName, it->second->listAllUsers()));
+	_client[c]->sendClient("353", this->_client[c]->getNickName() + " " + ChannelName, ":End of NAMES list"));
+*/
 }
 
 void	Channel::deleteClient(Client & client) {

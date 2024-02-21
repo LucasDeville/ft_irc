@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:48:01 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/20 20:48:05 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/21 10:35:07 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,30 +41,27 @@ public:
 	void 	new_channel(Client & client, std::string const & name);
 	void 	join_channel(Client & client, std::string const & name);
 
-	void	setPass(int i, std::string const & pass);
-
-
-	void	parseBuffer(char buffer[2048], int i);
+	void	parseBuffer(std::string buffer, int i);
 
 	//commands
-	int		cmdPass(std::string pass, int c);
-	int		cmdNick(std::string nick, int c);
-	int		cmdUser(std::string str, int c);
-	int		cmdJoin(std::string str, int c);
+	int		cmdPass(Parse parse, int c);
+	int		cmdNick(Parse parse, int c);
+	int		cmdUser(Parse parse, int c);
+	int		cmdJoin(Parse parse, int c);
 	
 	//done but not tested
-	int		cmdLeave(std::string str, int c);
-	int		cmdQuit(std::string str, int c);
-	int		cmdOper(std::string str, int c);
-	int		cmdTopic(std::string str, int c);
-	int		cmdKick(std::string str, int c);
-	int		cmdPM(std::string str, int c);
+	int		cmdLeave(Parse parse, int c);
+	int		cmdQuit(Parse parse, int c);
+	int		cmdOper(Parse parse, int c);
+	int		cmdTopic(Parse parse, int c);
+	int		cmdKick(Parse parse, int c);
+	int		cmdPM(Parse parse, int c);
 	//to-do
-	int		cmdInv(std::string str, int c);
-	int		cmdMode(std::string str, int c); // examples: MODE +i, MODE -i... MODE alone displays channel's modes. (MODE i displays i ?)
-	int		cmdSendF(std::string str, int c);
-	int		cmdGetF(std::string str, int c);
-	int		cmdBot(std::string str, int c);
+	int		cmdInv(Parse parse, int c);
+	int		cmdMode(Parse parse, int c); // examples: MODE +i, MODE -i... MODE alone displays channel's modes. (MODE i displays i ?)
+	int		cmdSendF(Parse parse, int c);
+	int		cmdGetF(Parse parse, int c);
+	int		cmdBot(Parse parse, int c);
 };
 
 #endif
