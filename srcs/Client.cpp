@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:52:29 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/21 13:58:08 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/21 14:33:50 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,15 @@ Client::Client(int socket) : _hostname("localhost"), _mode(0), _socket(socket), 
 
 Client::~Client() {
 
+}
+
+
+void    Client::sendClient(std::string num, std::string nickname, std::string str) 
+{
+    std::string paquet = num + " " + nickname + " :" + str + "\n";
+    std::cout << "---> " << paquet << std::endl;
+    if (send(_socket, paquet.c_str(), paquet.length(), 0) < 0)
+        throw(std::out_of_range("Error while sending to the client."));
 }
 
 void    Client::sendClient(std::string num, std::string str) 

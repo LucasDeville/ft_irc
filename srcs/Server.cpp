@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:50:58 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/21 14:16:32 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/21 15:08:34 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,7 +63,7 @@ void Server::serverLoop() {
 			if (_pollfd[i].revents & POLLHUP)
 			{
 				clientDisconnected(i);
-				break;
+				continue;
 			}
 			if (_pollfd[i].revents & POLLIN)
 			{
@@ -79,7 +79,9 @@ void Server::serverLoop() {
 void Server::clientDisconnected(long unsigned int i){
 	std::cout << "IRC: Client '" << _client[i]->getNickname() << "' connection closed." << std::endl;
 	close(_pollfd[i].fd);
+	close(_client[i]->getSocket());
 	_pollfd.erase(_pollfd.begin() + i);
+	_client.erase(_client.begin() + i);
 }
 
 void Server::acceptClient() {
@@ -90,10 +92,6 @@ void Server::acceptClient() {
 	socklen_t clen = sizeof(caddr);
 	if ((csock = accept(_serverSock, (struct sockaddr *) &caddr, &clen)) < 0)
 		throw acceptFailed();
-
-	// Set the client socket to non-blocking
-	int flags = fcntl( pollFd.fd, F_GETFL, 0 );
-	fcntl( pollFd.fd, F_SETFL, flags | O_NONBLOCK );
 
 	pollFd.fd = csock;
 	pollFd.events = POLLIN | POLLOUT;
@@ -155,9 +153,9 @@ int	Server::sendAllClients(Channel *channel, int senderFd, std::string num, std:
 
 void	Server::parseBuffer(std::string buffer, int client) {
 
-	std::cout << buffer << std::endl;
-	std::string	commands[4] = {"PASS", "NICK", "USER", "JOIN"}; //CHANGE number for below 
-	int	(Server::*_cPtr[4])(Parse parse, int client) = {&Server::cmdPass, &Server::cmdNick, &Server::cmdUser, &Server::cmdJoin};
+	int cmd = 10;
+	std::string	commands[cmd] = {"PASS", "NICK", "USER", "JOIN", "PART", "QUIT", "OPER", "TOPIC", "KICK", "PRIVMSG"}; //CHANGE number for below 
+	int	(Server::*_cPtr[cmd])(Parse parse, int client) = {&Server::cmdPass, &Server::cmdNick, &Server::cmdUser, &Server::cmdJoin, &Server::cmdLeaveChannel, &Server::cmdQuitServer, &Server::cmdOper, &Server::cmdTopic, &Server::cmdKick, &Server::cmdPM};
 
 	for(int i = 0; buffer[i]; i++) {
 		if (buffer[i] == '\n')
@@ -166,7 +164,7 @@ void	Server::parseBuffer(std::string buffer, int client) {
 
 	Parse parse(buffer);
 	
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < cmd; i++) {
 		if (parse.cmd.compare(commands[i]) == 0) {
 
 			std::cout << "CMD : " << parse.cmd << std::endl;
@@ -304,7 +302,7 @@ int Server::cmdOper(Parse parse, int c) {
 	
 	if (!this->getOperatorList().empty())
 	{
-		_client[c]->sendClient("464", "Denied. If you want operator rights, ask an operator."); //revoir code
+		_client[c]->sendClient("464", "Denied. If you want operator rights, ask an operator.");
 		return 0;
 	}
 	this->getOperatorList().push_back(_client[c]);
@@ -391,17 +389,20 @@ int Server::cmdPM(Parse parse, int c) {
 
 	if (parse.args[0][0] == '#' || parse.args[0][0] == '!' || parse.args[0][0] == '&' || parse.args[0][0] == '+')
 	{
-		if (_channel.find(&parse.args[0][1]) == _channel.end())
+		std::map<std::string, Channel *>::iterator chan = _channel.find(&parse.args[0][1]);
+		if (chan == _channel.end())
 			return (_client[c]->sendClient("404", "This channel doesn't exist."), 0);
-		//sendChannel("301", parse.args[1]);
-		return 1;
+		else
+			return (sendAllClients(chan->second, _client[c]->getSocket(), "301", parse.args[1]), 1);
 	}
 	
 	for (unsigned int i = 0; i < _client.size(); i++)
 	{
-		if (_client[i]->getNickname() == parse.args[0])
-			_client[i]->sendClient("301", parse.args[1]);
-		return 1;
+		if (_client[i]->getNickname().compare(parse.args[0]) == 0)
+		{
+			_client[i]->sendClient("301", _client[c]->getNickname(), parse.args[1]);
+			return 1;
+		}
 	}
 	_client[c]->sendClient("401", "Wrong username.");
 	return 0;
