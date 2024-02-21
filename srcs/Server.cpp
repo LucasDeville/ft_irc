@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:50:58 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/21 10:42:43 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/21 14:08:22 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@ Server::Server() {
 
 Server::Server(int port, std::string passwd) : _port(port), _passwd(passwd) {
 
-	new_channel( DEFAULT_CHANNEL );
+	// new_channel( DEFAULT_CHANNEL );
 }
 
 Server::~Server() {
@@ -103,7 +103,7 @@ void Server::acceptClient() {
 	_pollfd.push_back(pollFd);
 	Client *newClient = new Client(csock);
 	_client.push_back(newClient);
-	_channel["*"]->addClient(*newClient);
+	// _channel["*"]->addClient(*newClient);
 	std::cout << "New client : " << csock << std::endl;
 }
 
@@ -117,7 +117,6 @@ void Server::handleInput(unsigned long int i) {
 	 	clientDisconnected(i);
 	std::string str(buffer, strlen(buffer) - 1);
 	parseBuffer(str, i);
-	// std::cout << _client[i]->getNickname() << " (" << i << "):" << buffer << std::endl;
 }
 
 void Server::new_channel(std::string const & name)
@@ -141,19 +140,29 @@ void Server::join_channel(Client & client, std::string const & name)
 	}
 }
 
+int	Server::sendAllClients(Channel *channel, int senderFd, std::string num, std::string message)
+{
+	std::vector<Client> clients = channel->getAllClients();
+	std::vector<Client>::iterator it = clients.begin();
+	while (it != clients.end())
+	{
+		if (senderFd != it->getSocket())
+			it->sendClient(num, message);
+		it++;
+	}
+	return (1);
+}
+
 void	Server::parseBuffer(std::string buffer, int client) {
 
 	std::cout << buffer << std::endl;
 	std::string	commands[4] = {"PASS", "NICK", "USER", "JOIN"}; //CHANGE number for below 
 	int	(Server::*_cPtr[4])(Parse parse, int client) = {&Server::cmdPass, &Server::cmdNick, &Server::cmdUser, &Server::cmdJoin};
 
-
-
 	for(int i = 0; buffer[i]; i++) {
 		if (buffer[i] == '\n')
 			buffer[i] = 0; 
 	}
-	std::cout << buffer << std::endl;
 
 	Parse parse(buffer);
 	
@@ -163,11 +172,9 @@ void	Server::parseBuffer(std::string buffer, int client) {
 			std::cout << "CMD : " << parse.cmd << std::endl;
 			for (long unsigned int i = 0; i < parse.args.size(); i++)
 				std::cout << parse.args[i] << std::endl;
-			
 
 			if (!(this->*_cPtr[i])(parse, client))
 				std::cout << "Error command : " << commands[i] << std::endl;
-				
 		}
 	}
 }
