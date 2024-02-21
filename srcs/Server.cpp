@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
+/*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:50:58 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/21 10:42:43 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/21 14:09:50 by bpleutin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -180,8 +180,8 @@ int	Server::cmdPass(Parse parse, int c) {
 		_client[c]->sendClient("462", "You are already registered");
 		return (0);
 	}
-
-	//Paramètre vide - 461
+	if (parse.args[0].empty())
+		_client[c]->sendClient("461", "Not enough parameters");
 
 	if (!strcmp(parse.args[0].c_str(), _passwd.c_str())) {
 		_client[c]->setPass(parse.args[0]);
@@ -204,7 +204,11 @@ int	Server::cmdNick(Parse parse, int c) {
 			return (_client[c]->sendClient("432", "The nickname can't contain special character !"), 0);
 	}
 
-	//Nickname already use - 433
+	for (unsigned int i = 0; i < _client.size(); i++)
+	{
+		if (parse.args[0] == _client[i]->getNickname())
+			return (_client[c]->sendClient("433", "Nickname is already in use"), 0);
+	}
 
 	_client[c]->setNickname(parse.args[0]);
 	if (!_client[c]->getRegistered())
@@ -233,11 +237,10 @@ int	Server::cmdUser(Parse parse, int c) {
 int	Server::cmdJoin(Parse parse, int c) {
 
 	if (!_client[c]->getRegistered())
-		return(_client[c]->sendClient("451", "You are not registered"), 0);
-
-	// Pas assez de paramètre (1) - 461
-
-	//Si arg = "0" - quitter tous les channels
+		return (_client[c]->sendClient("451", "You are not registered"), 0);
+	
+	if (parse.args[0].empty())
+		return (_client[c]->sendClient("461", "Not enough parameters"), 0);
 
 	if (_channel.find(parse.args[0]) == _channel.end())
 		new_channel(*_client[c], parse.args[0]);
@@ -247,9 +250,8 @@ int	Server::cmdJoin(Parse parse, int c) {
 	return (1);
 }
 
-int Server::cmdLeave(Parse parse, int c) {
+int Server::cmdLeaveChannel(Parse parse, int c) {
 
-//same as QUIT ? Leave = quit ?
 	if (!_client[c]->getRegistered())
 		return(_client[c]->sendClient("451", "You are not registered"), 0);
 	if (_client[c]->getChannel() == NULL)
@@ -263,18 +265,18 @@ int Server::cmdLeave(Parse parse, int c) {
 
 	for (it = _channel.begin(); it != _channel.end(); ++it)
 	{
-    	if (it->second == _client[c]->getChannel())
+    	if (it->second == _client[c]->getChannel() || parse.args[0] == "0")
 		{
 			_client[c]->setChannel(NULL);
 			_client[c]->setMode(0);
-			_channel.erase(it->first);
+			it->second->deleteClient(*_client[c]);
 			return 1;
 		}
 	}
 	return 0;
 }
 
-int Server::cmdQuit(Parse parse, int c) {
+int Server::cmdQuitServer(Parse parse, int c) {
 	(void) parse;
 	clientDisconnected(c);
 	return 1;
@@ -283,38 +285,24 @@ int Server::cmdQuit(Parse parse, int c) {
 int Server::cmdOper(Parse parse, int c) {
 
 	if (!_client[c]->getRegistered())
-		return(_client[c]->sendClient("451", "You are not registered"), 0);
-	if (_client[c]->getChannel() == NULL)
-	{
-		_client[c]->sendClient("464", "Not in any channel."); //revoir code
-		return 0;	
-	}
+		return(_client[c]->sendClient("451", "You are not registered."), 0);
 	if (_client[c]->getMode())
 	{
-		_client[c]->sendClient("464", "Already an operator of this channel."); //revoir code
-		return 0;
+		_client[c]->sendClient("381", "You now have operator rights !");
+		return 1;
 	}
 
-	std::map<std::string, Channel *>::iterator it;
 	(void) parse;
 	
-	//droit opérateur personnel est non sur chaque channel ?
-	//Need un password transmis via str ?
-
-	for (it = _channel.begin(); it != _channel.end(); ++it)
+	
+	if (!this->getOperatorList().empty())
 	{
-    	if (it->second == _client[c]->getChannel())
-		{
-			if (!it->second->getOperatorList().empty())
-			{
-				_client[c]->sendClient("464", "Denied. If you want operator rights, ask an operator."); //revoir code
-				return 0;
-			}
-			it->second->getOperatorList().push_back(*_client[c]);
-			_client[c]->sendClient("381", "You have now operator rights !");
-			_client[c]->setMode(1);
-		}
+		_client[c]->sendClient("464", "Denied. If you want operator rights, ask an operator."); //revoir code
+		return 0;
 	}
+	this->getOperatorList().push_back(_client[c]);
+	_client[c]->sendClient("381", "You now have operator rights !");
+	_client[c]->setMode(1);
 	
 	return 1;
 }
@@ -340,7 +328,12 @@ int Server::cmdTopic(Parse parse, int c) {
     	if (it->second == _client[c]->getChannel())
 		{
 			if (parse.args[0].empty())
-				_client[c]->sendClient("332", it->second->getTopic()); //verif si topic vide ? Si oui 331
+			{
+				if (it->second->getTopic() == "")
+					_client[c]->sendClient("331", "No topic is set");
+				else
+					_client[c]->sendClient("332", it->second->getTopic());
+			}
 			else
 				it->second->addTopic(parse.args[0]);
 		}
@@ -367,12 +360,9 @@ int Server::cmdKick(Parse parse, int c) {
 	{
 		if (_client[i]->getNickname() == parse.args[0])
 		{
-			// _client[i]->sendClient("You have been kicked by " + _client[c]->getNickname());
-			// _client[c]->sendClient("Successfully kicked " + _client[i]->getNickname());
-
-			//No message ? except "KICK channelName"
-
-			// send channel "_client[i] has been kicked by _client[c]"
+			// send channel "KICK _client[i] from [channel]"
+			_client[c]->sendClient("301", _client[i]->getNickname() + " successfully kicked");
+			_client[i]->sendClient("301", "You have been kicked by " + _client[c]->getNickname() + ":" + parse.args[2]);
 			clientDisconnected(i);
 			return 1;
 		}
@@ -380,7 +370,8 @@ int Server::cmdKick(Parse parse, int c) {
 	
 	_client[c]->sendClient("441", "Wrong username or not in that channel.");
 
-	//Channel doest not exist ? - 403
+	if (_channel.find(parse.args[1]) == _channel.end())
+		_client[c]->sendClient("403", "Channel doesn't exist");
 	
 	return 0;
 }
@@ -391,32 +382,21 @@ int Server::cmdPM(Parse parse, int c) {
 	
 	(void) parse;
 
-	//On peut envoyer des messages prive pas juste channel
-	/*if (_client[c]->getChannel() == NULL)
+	if (parse.args[0][0] == '#' || parse.args[0][0] == '!' || parse.args[0][0] == '&' || parse.args[0][0] == '+')
 	{
-		_client[c]->sendClient("442", "Not in any channel.");
-		return 0;	
-	}
-
-	if (!_client[c]->getMode())
-	{
-		_client[c]->sendClient("482", "You don't have the rights for this.");
-		return 0;
+		if (_channel.find(&parse.args[0][1]) == _channel.end())
+			return (_client[c]->sendClient("404", "This channel doesn't exist."), 0);
+		//sendChannel("301", parse.args[1]);
+		return 1;
 	}
 	
 	for (unsigned int i = 0; i < _client.size(); i++)
 	{
-		if (_client[i]->getNickname() == str)
-		{
-			_client[i]->sendClient("You have been kicked by " + _client[c]->getNickname());
-			_client[c]->sendClient("Successfully kicked " + _client[i]->getNickname());
-			// send channel "_client[i] has been kicked by _client[c]"
-			clientDisconnected(i);
-			return 1;
-		}
+		if (_client[i]->getNickname() == parse.args[0])
+			_client[i]->sendClient("301", parse.args[1]);
+		return 1;
 	}
-	
-	_client[c]->sendClient("Wrong username.");*/
+	_client[c]->sendClient("401", "Wrong username.");
 	return 0;
 }
 

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
+/*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:48:01 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/21 10:35:07 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/21 11:32:23 by bpleutin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,7 @@ private:
 	std::string							_passwd;
 	std::vector<pollfd>					_pollfd;
 	std::vector<Client *>				_client;
+	std::vector<Client *> 				_operator;
 	std::map<std::string, Channel *>	_channel;
 	Server();
 
@@ -42,6 +43,7 @@ public:
 	void 	join_channel(Client & client, std::string const & name);
 
 	void	parseBuffer(std::string buffer, int i);
+	std::vector<Client *> getOperatorList() const { return _operator; };
 
 	//commands
 	int		cmdPass(Parse parse, int c);
@@ -50,8 +52,8 @@ public:
 	int		cmdJoin(Parse parse, int c);
 	
 	//done but not tested
-	int		cmdLeave(Parse parse, int c);
-	int		cmdQuit(Parse parse, int c);
+	int		cmdLeaveChannel(Parse parse, int c);
+	int		cmdQuitServer(Parse parse, int c);
 	int		cmdOper(Parse parse, int c);
 	int		cmdTopic(Parse parse, int c);
 	int		cmdKick(Parse parse, int c);
