@@ -6,7 +6,7 @@
 /*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:48:01 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/21 11:32:23 by bpleutin         ###   ########.fr       */
+/*   Updated: 2024/02/21 17:38:51 by bpleutin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,7 @@ private:
 	std::vector<Client *>				_client;
 	std::vector<Client *> 				_operator;
 	std::map<std::string, Channel *>	_channel;
+	std::map<std::string, File>			_files;
 	Server();
 
 public:
@@ -58,11 +59,11 @@ public:
 	int		cmdTopic(Parse parse, int c);
 	int		cmdKick(Parse parse, int c);
 	int		cmdPM(Parse parse, int c);
-	//to-do
-	int		cmdInv(Parse parse, int c);
-	int		cmdMode(Parse parse, int c); // examples: MODE +i, MODE -i... MODE alone displays channel's modes. (MODE i displays i ?)
 	int		cmdSendF(Parse parse, int c);
 	int		cmdGetF(Parse parse, int c);
+	int		cmdInv(Parse parse, int c);
+	//to-do
+	int		cmdMode(Parse parse, int c); // examples: MODE +i, MODE -i... MODE alone displays channel's modes. (MODE i displays i ?)
 	int		cmdBot(Parse parse, int c);
 };
 
