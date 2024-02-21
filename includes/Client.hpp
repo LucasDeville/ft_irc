@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:43:05 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/21 14:34:14 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/21 20:38:27 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,6 +54,7 @@ public:
 	void				setMode(int m) { _mode = m; };
 	
 	void				notRegistered();
+	void				sendWelcome() const;
 	void				sendClient(std::string num, std::string nickname, std::string str);
 	void				sendClient(std::string num, std::string str);
 	void				setChannel(Channel *channel);

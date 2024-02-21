@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:50:58 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/21 20:07:49 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/21 20:59:55 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,13 +84,14 @@ void Server::serverLoop() {
 	}
 }
 
-void Server::clientDisconnected(long unsigned int i){
+void Server::clientDisconnected(long unsigned int i, int cli) {
 	std::cout << "IRC: Client '" << _client[i]->getNickname() << "' connection closed." << std::endl;
-	close(_pollfd[i].fd);
-	close(_client[i]->getSocket());
+	close(_client[cli]->getSocket());
 	_pollfd.erase(_pollfd.begin() + i);
-	delete _client[i];
-	_client.erase(_client.begin() + i);
+	if (_client[cli]->getChannel() != NULL)
+		_client[cli]->getChannel()->deleteClient(*_client[cli], *this);
+	delete _client[cli];
+	_client.erase(_client.begin() + cli);
 }
 
 void Server::acceptClient() {
@@ -113,20 +114,38 @@ void Server::acceptClient() {
 	_pollfd.push_back(pollFd);
 	Client *newClient = new Client(csock);
 	_client.push_back(newClient);
+
+	newClient->sendWelcome();
 	// _channel["*"]->addClient(*newClient);
 	std::cout << "New client : " << csock << std::endl;
 }
 
+int Server::getClientIndex(int fd) {
+	int index = 0;
+
+	while (_client[index]) {
+		if (_client[index]->getSocket() == fd)
+			return index;
+		index++;
+	}
+
+	std::cout << "getClientIndex : Error no client with this fd !" << std::endl;
+	return -1;
+}
+
 void Server::handleInput(unsigned long int i) {
 	char buffer[8192];
-	int err = recv(_client[i]->getSocket(), &buffer, sizeof(buffer), 0);
+	int err = recv(_pollfd[i].fd, &buffer, sizeof(buffer), 0);
 	if (err < 0)
 		throw recvFailed();
 	buffer[err] = '\0';
+	int cli = getClientIndex(_pollfd[i].fd);
+	if (cli == -1)
+		return ;
 	if (err == 0)
-	 	clientDisconnected(i);
+	 	clientDisconnected(i, cli);
 	//std::string str(buffer, strlen(buffer) - 1);
-	parseBuffer(buffer, i);
+	parseBuffer(buffer, cli);
 	memset(&buffer, 0, 8192);
 }
 
@@ -138,7 +157,7 @@ void Server::new_channel(std::string const & name)
 
 void Server::new_channel(Client & client, std::string const & name)
 {
-	Channel * channel = new Channel(name, client);
+	Channel * channel = new Channel(name, client, *this);
 	_channel.insert( std::pair<std::string, Channel *>( name, channel ) );
 }
 
@@ -146,13 +165,12 @@ void Server::join_channel(Client & client, std::string const & name)
 {
 	if (_channel.find(name) != _channel.end())
 	{
-		_channel[name]->addClient(client);
+		_channel[name]->addClient(client, *this);
 		client.setChannel(_channel[name]);
 	}
 }
 
-int	Server::sendAllClients(Channel *channel, int senderFd, std::string num, std::string message)
-{
+int	Server::sendAllClients(Channel *channel, int senderFd, std::string num, std::string message) {
 	std::vector<Client> clients = channel->getAllClients();
 	std::vector<Client>::iterator it = clients.begin();
 	while (it != clients.end())
@@ -284,7 +302,7 @@ int Server::cmdLeaveChannel(Parse parse, int c) {
 		{
 			_client[c]->setChannel(NULL);
 			_client[c]->setMode(0);
-			it->second->deleteClient(*_client[c]);
+			it->second->deleteClient(*_client[c], *this);
 			return 1;
 		}
 	}
@@ -293,7 +311,7 @@ int Server::cmdLeaveChannel(Parse parse, int c) {
 
 int Server::cmdQuitServer(Parse parse, int c) {
 	(void) parse;
-	clientDisconnected(c);
+	clientDisconnected(_client[c]->getSocket(), c);
 	return 1;
 }
 
@@ -371,23 +389,22 @@ int Server::cmdKick(Parse parse, int c) {
 		return 0;
 	}
 	
+	if (_channel.find(parse.args[1]) == _channel.end())
+		_client[c]->sendClient("403", "Channel doesn't exist");
+	
 	for (unsigned int i = 0; i < _client.size(); i++)
 	{
-		if (_client[i]->getNickname() == parse.args[0])
+		if (_client[i]->getNickname() == parse.args[0] && _client[i]->getChannel() != NULL)
 		{
 			// send channel "KICK _client[i] from [channel]"
 			_client[c]->sendClient("301", _client[i]->getNickname() + " successfully kicked");
 			_client[i]->sendClient("301", "You have been kicked by " + _client[c]->getNickname() + ":" + parse.args[2]);
-			clientDisconnected(i);
+			_client[i]->getChannel()->deleteClient(*_client[i], *this);
 			return 1;
 		}
 	}
-	
 	_client[c]->sendClient("441", "Wrong username or not in that channel.");
 
-	if (_channel.find(parse.args[1]) == _channel.end())
-		_client[c]->sendClient("403", "Channel doesn't exist");
-	
 	return 0;
 }
 
