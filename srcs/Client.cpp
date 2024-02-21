@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:52:29 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/21 20:44:34 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/21 22:58:27 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,7 @@ void    Client::sendWelcome() const
     paquet.append("| |              | || |              | || |              | || |              | |\n");
     paquet.append("| '--------------' || '--------------' || '--------------' || '--------------' |\n");
     paquet.append("'----------------'  '----------------'  '----------------'  '----------------' \n\n");
-    paquet.append("Welcome to the IRC 3D2Y server ! You can use the bot with the commande 'HELP' if you need it.\n");
+    paquet.append("Welcome to the IRC 3D2Y server ! You can use the bot with the command 'HELP' if you need it.\n");
 
     std::cout << "---> " << paquet << std::endl;
     if (send(_socket, paquet.c_str(), paquet.length(), 0) < 0)

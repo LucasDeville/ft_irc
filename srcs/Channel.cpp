@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/15 15:54:31 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/21 21:01:06 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/21 22:33:28 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,6 +61,7 @@ void	Channel::deleteClient(Client & client, Server & server) {
 		if (_client[i].getSocket() == client.getSocket()) {
 			server.sendAllClients(this, _client[i].getSocket(), "", (_client[i].getNickname() + " just left the channel"));
 			_client.erase(_client.begin() + i);
+			break ;
 		}
 	}
 }

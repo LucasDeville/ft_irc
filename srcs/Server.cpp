@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:50:58 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/21 20:59:55 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/21 22:40:18 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,11 +85,11 @@ void Server::serverLoop() {
 }
 
 void Server::clientDisconnected(long unsigned int i, int cli) {
-	std::cout << "IRC: Client '" << _client[i]->getNickname() << "' connection closed." << std::endl;
 	close(_client[cli]->getSocket());
 	_pollfd.erase(_pollfd.begin() + i);
 	if (_client[cli]->getChannel() != NULL)
 		_client[cli]->getChannel()->deleteClient(*_client[cli], *this);
+	std::cout << "IRC: Client '" << _client[i]->getNickname() << "' connection closed." << std::endl;
 	delete _client[cli];
 	_client.erase(_client.begin() + cli);
 }
@@ -116,7 +116,6 @@ void Server::acceptClient() {
 	_client.push_back(newClient);
 
 	newClient->sendWelcome();
-	// _channel["*"]->addClient(*newClient);
 	std::cout << "New client : " << csock << std::endl;
 }
 
@@ -128,7 +127,6 @@ int Server::getClientIndex(int fd) {
 			return index;
 		index++;
 	}
-
 	std::cout << "getClientIndex : Error no client with this fd !" << std::endl;
 	return -1;
 }
