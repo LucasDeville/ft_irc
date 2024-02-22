@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:50:58 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/22 15:34:32 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/22 15:52:35 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -244,8 +244,10 @@ void	Server::parseBuffer(std::string buffer, int client) {
 
 			if (!(this->*_cPtr[i])(parse, client))
 				std::cout << "Error on command : " << commands[i] << std::endl;
+			return ;
 		}
 	}
+	_client[client]->sendClient("404", "Server", "Command '" + parse.cmd + "' not found.");
 }
 
 int	Server::cmdPass(Parse parse, int c) {
@@ -482,7 +484,7 @@ int Server::cmdPM(Parse parse, int c) {
 			return 1;
 		}
 	}
-	_client[c]->sendClient("401", "Wrong username.");
+	_client[c]->sendClient("401", "Server", "Wrong username.");
 	return 0;
 }
 
