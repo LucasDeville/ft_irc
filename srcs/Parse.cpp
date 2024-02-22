@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/15 15:54:31 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/21 10:36:22 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/22 12:06:03 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,5 +55,6 @@ Parse::Parse(std::string & arg) : args(), cmd(""), invalid(false) {
 			args.erase(args.begin());
 		}
 	}
+	if (args.empty())
+		args.push_back("");
 }
-

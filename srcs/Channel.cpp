@@ -48,25 +48,27 @@ int		Channel::getClientNum() const
 		i++;
 		it++;
 	}
+	std::cout << "getClientNum = " << i << std::endl;
 	return (i);
 }
 
 void	Channel::addClient(Client & client, Server & server) {
 
 	_client.push_back(client);
-	client.sendClient("", ("JOIN :" + _name + "\n"));
-	client.sendClient("332", (_name + " :" + _topic));
-	client.sendClient("353", (" = " + _name, listAllUsers()));
-	client.sendClient("353", (" " + _name + " :End of NAMES list."));
-	server.sendAllClients(this, client.getSocket(), "", "", (client.getNickname() + " join the channel"));
+	client.sendClient("", "", ("JOIN #" + _name));
+	client.sendClient("332", "Server", (_name + " :" + _topic));
+	client.sendClient("353", "Server",(" = " + _name, listAllUsers()));
+	client.sendClient("353", "Server",(" " + _name + " :End of NAMES list."));
+	server.sendAllClients(this, client.getSocket(), ("#" +_name), "301", (client.getNickname() + " join the channel"));
 }
 
 void	Channel::deleteClient(Client & client, Server & server) {
 
 	for(long unsigned int i = 0; i != _client.size(); i++) {
 		if (_client[i].getSocket() == client.getSocket()) {
-			server.sendAllClients(this, _client[i].getSocket(), "", "", (_client[i].getNickname() + " just left the channel"));
+			server.sendAllClients(this, _client[i].getSocket(), ("#" +_name), "301", (_client[i].getNickname() + " just left the channel"));
 			_client.erase(_client.begin() + i);
+      rmUser();
 			break ;
 		}
 	}

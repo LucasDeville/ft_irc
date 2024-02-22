@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:52:29 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/21 22:58:27 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/22 15:29:43 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,6 @@ void    Client::sendWelcome() const
     paquet.append("'----------------'  '----------------'  '----------------'  '----------------' \n\n");
     paquet.append("Welcome to the IRC 3D2Y server ! You can use the bot with the command 'HELP' if you need it.\n");
 
-    std::cout << "---> " << paquet << std::endl;
     if (send(_socket, paquet.c_str(), paquet.length(), 0) < 0)
         throw(std::out_of_range("Error while sending to the client."));
 }
@@ -48,7 +47,6 @@ void    Client::sendWelcome() const
 void    Client::sendClient(std::string num, std::string nickname, std::string str) 
 {
     std::string paquet = num + " " + nickname + " :" + str + "\n";
-    std::cout << "---> " << paquet << std::endl;
     if (send(_socket, paquet.c_str(), paquet.length(), 0) < 0)
         throw(std::out_of_range("Error while sending to the client."));
 }
@@ -56,19 +54,16 @@ void    Client::sendClient(std::string num, std::string nickname, std::string st
 void    Client::sendClient(std::string num, std::string str) 
 {
     std::string paquet = num + " " + (_nickname.empty() ? "*" : _nickname) + " :" + str + "\n";
-    std::cout << "---> " << paquet << std::endl;
     if (send(_socket, paquet.c_str(), paquet.length(), 0) < 0)
         throw(std::out_of_range("Error while sending to the client."));
 }
 
 void Client::notRegistered() {
 
-	if (_nickname.empty() || _username.empty() || _passwd.empty()) {
-		//sendClient("451", "Waiting for registration...\n");
+	if (_nickname.empty() || _username.empty() || _passwd.empty())
 		return;
-	}
 	_registered = true;
-	sendClient("001", "You are now registered to the IRC 3D2Y server !\n");
+	sendClient("001", ("You are now registered to the IRC 3D2Y server, " +_nickname + "!" + _username + "@" + _hostname ));
 }
 
 void	Client::setChannel(Channel *channel) {

@@ -45,6 +45,7 @@ public:
 	int		getClientIndex(int fd);
 	unsigned long int findPoolId(int fd);
 	void	checkChan(Channel * chan);
+	void	checkOperator(Client * cli);
 	int		sendAllClients(Channel *channel, int senderFd,  std::string nickname, std::string num, std::string message);
 
 	void	parseBuffer(std::string buffer, int i);
