@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Channel.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/15 15:54:31 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/22 15:23:25 by bpleutin         ###   ########.fr       */
+/*   Updated: 2024/02/22 21:56:51 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,7 +48,6 @@ int		Channel::getClientNum() const
 		i++;
 		it++;
 	}
-	std::cout << "getClientNum = " << i << std::endl;
 	return (i);
 }
 
@@ -60,6 +59,7 @@ void	Channel::addClient(Client & client, Server & server) {
 	client.sendClient("353", "Server",(" = " + _name, listAllUsers()));
 	client.sendClient("353", "Server",(" " + _name + " :End of NAMES list."));
 	server.sendAllClients(this, client.getSocket(), ("#" +_name), "301", (client.getNickname() + " join the channel"));
+	addUser();
 }
 
 void	Channel::deleteClient(Client & client, Server & server) {
@@ -68,7 +68,7 @@ void	Channel::deleteClient(Client & client, Server & server) {
 		if (_client[i].getSocket() == client.getSocket()) {
 			server.sendAllClients(this, _client[i].getSocket(), ("#" +_name), "301", (_client[i].getNickname() + " just left the channel"));
 			_client.erase(_client.begin() + i);
-      rmUser();
+      		rmUser();
 			break ;
 		}
 	}
@@ -76,4 +76,21 @@ void	Channel::deleteClient(Client & client, Server & server) {
 
 std::vector<Client>	Channel::getAllClients() const {
 	return (_client);
+}
+
+void	Channel::deleteInvite(Client * cli) {
+	for (long unsigned int i = 0; i < _invited.size(); i++)
+		if (_invited[i]->getSocket() == cli->getSocket())
+			_invited.erase(_invited.begin() + i);
+}
+
+void	Channel::addInvite(Client * cli) {
+	_invited.push_back(cli);
+}
+
+int Channel::isInvited(Client * cli) {
+	for (long unsigned int i = 0; i < _invited.size(); i++)
+		if (_invited[i]->getSocket() == cli->getSocket())
+			return 1;
+	return 0;
 }

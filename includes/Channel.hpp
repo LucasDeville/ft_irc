@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Channel.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/15 15:50:13 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/22 15:47:47 by bpleutin         ###   ########.fr       */
+/*   Updated: 2024/02/22 21:33:22 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@ private:
 	int						_limit;
 	int						_users;
 	std::vector<Client>		_client;
+	std::vector<Client *>	_invited;
 	std::map<const char, int>	_mode;
 	Channel();
 
@@ -39,6 +40,9 @@ public:
 	void				addClient(Client & client, Server & server);
 	void				addTopic(std::string str) { _topic = str; };
 	void				deleteClient(Client & client, Server & server);
+	void				deleteInvite(Client * cli);
+	void				addInvite(Client * cli);
+	int					isInvited(Client * cli);
 	std::string const &	getChannelName() const { return _name; };
 	std::string const & getKey() const { return _key; };
 	int	const & getLimit() const { return _limit; };

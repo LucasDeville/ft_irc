@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:50:58 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/22 16:08:03 by bpleutin         ###   ########.fr       */
+/*   Updated: 2024/02/22 22:04:12 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,6 +33,11 @@ Server::~Server() {
 	std::vector<Client *>::iterator it = _client.begin();
 	while (it != _client.end()) {
 		delete (*it);
+		it++;
+	}
+	std::map<std::string, Channel *>::iterator ite;
+	for (ite = _channel.begin(); ite != _channel.end(); ++ite) {
+		delete (ite->second);
 		it++;
 	}
 }
@@ -207,7 +212,6 @@ void Server::join_channel(Client & client, std::string const & name)
 	if (_channel.find(name) != _channel.end())
 	{
 		_channel[name]->addClient(client, *this);
-		_channel[name]->addUser();
 		client.setChannel(_channel[name]);
 	}
 }
@@ -226,9 +230,9 @@ int	Server::sendAllClients(Channel *channel, int senderFd, std::string nickname,
 
 void	Server::parseBuffer(std::string buffer, int client) {
 
-	int cmd = 14;
-	std::string	commands[cmd] = {"PASS", "NICK", "USER", "JOIN", "PART", "QUIT", "OPER", "TOPIC", "KICK", "PRIVMSG", "SENDFILE", "GETFILE", "INVITE", "HELP"}; 
-	int	(Server::*_cPtr[cmd])(Parse parse, int client) = {&Server::cmdPass, &Server::cmdNick, &Server::cmdUser, &Server::cmdJoin, &Server::cmdLeaveChannel, &Server::cmdQuitServer, &Server::cmdOper, &Server::cmdTopic, &Server::cmdKick, &Server::cmdPM, &Server::cmdSendF, &Server::cmdGetF, &Server::cmdInv, &Server::cmdBot};
+	int cmd = 15;
+	std::string	commands[cmd] = {"PASS", "NICK", "USER", "JOIN", "PART", "QUIT", "OPER", "TOPIC", "KICK", "PRIVMSG", "SENDFILE", "GETFILE", "INVITE", "MODE", "HELP"}; 
+	int	(Server::*_cPtr[cmd])(Parse parse, int client) = {&Server::cmdPass, &Server::cmdNick, &Server::cmdUser, &Server::cmdJoin, &Server::cmdLeaveChannel, &Server::cmdQuitServer, &Server::cmdOper, &Server::cmdTopic, &Server::cmdKick, &Server::cmdPM, &Server::cmdSendF, &Server::cmdGetF, &Server::cmdInv, &Server::cmdMode, &Server::cmdBot};
 
 	for(int i = 0; buffer[i]; i++) {
 		if (buffer[i] == '\n')
@@ -239,11 +243,6 @@ void	Server::parseBuffer(std::string buffer, int client) {
 	
 	for (int i = 0; i < cmd; i++) {
 		if (parse.cmd.compare(commands[i]) == 0) {
-
-			std::cout << "CMD : " << parse.cmd << std::endl;
-			for (long unsigned int i = 0; i < parse.args.size(); i++)
-				std::cout << parse.args[i] << std::endl;
-
 			if (!(this->*_cPtr[i])(parse, client))
 				std::cout << "Error on command : " << commands[i] << std::endl;
 			return ;
@@ -319,20 +318,22 @@ int	Server::cmdJoin(Parse parse, int c) {
 	if (parse.args[0].empty())
 		return (_client[c]->sendClient("461", "Server", "Not enough parameters"), 0);
 
+	if (_channel.find(parse.args[0]) != _channel.end()) {
+		
+		if (_channel.find(parse.args[0])->second->getMode('i') == 1 && _channel.find(parse.args[0])->second->isInvited(_client[c]) == 0)
+			return (_client[c]->sendClient("301", "Server", "Invite-only channel"), 0);
 
-	/*if (_channel.find(parse.args[0])->second->getMode('i') == 1)
-	{
-		unsigned int i;
-		for (i = 0; i < _client.size(); i++)
-			if (_channel.find(parse.args[0])->second->getInvites()[i] == _client[c])
-				break;
-		if (i == _channel.find(parse.args[0])->second->getInvites().size())
-			return (_client[c]->sendClient("", "Invite-only channel"), 0);
-	}*/
+		if (_channel.find(parse.args[0])->second->getLimit() != -1
+			&& _channel.find(parse.args[0])->second->getUsers() >= _channel.find(parse.args[0])->second->getLimit())
+			return (_client[c]->sendClient("471", "Server", "Channel is full"), 0);
 
-	if (_channel.find(parse.args[0])->second->getLimit() != -1
-		|| _channel.find(parse.args[0])->second->getUsers() >= _channel.find(parse.args[0])->second->getLimit())
-		return (_client[c]->sendClient("471", "Server", "Channel is full"), 0);
+		if (!_channel.find(parse.args[0])->second->getKey().empty()) {
+			if (parse.args.size() < 2)
+				return (_client[c]->sendClient("461", "Server", "A password is needed to join this channel."), 0);
+			if (_channel.find(parse.args[0])->second->getKey().compare(parse.args[1]) != 0)
+				return (_client[c]->sendClient("997", "Server", "Wrong password for this channel."), 0);
+		}
+	} 
 
 	if (_client[c]->getChannel() != NULL) {
 		if (_client[c]->getChannel()->getChannelName().compare(parse.args[0]) == 0)
@@ -409,7 +410,7 @@ int Server::cmdTopic(Parse parse, int c) {
 		_client[c]->sendClient("442", "Server", "Not in any channel.");
 		return 0;	
 	}
-	if (_channel.find(parse.args[0])->second->getMode('t') == 1 && !_client[c]->getOper())
+	if (!parse.args[0].empty() && _client[c]->getChannel()->getMode('t') == 1 && !_client[c]->getOper())
 	{
 		_client[c]->sendClient("482", "Server", "You don't have the rights for this.");
 		return 0;
@@ -424,9 +425,9 @@ int Server::cmdTopic(Parse parse, int c) {
 			if (parse.args[0].empty())
 			{
 				if (it->second->getTopic() == "")
-					_client[c]->sendClient("331", "No topic is set");
+					_client[c]->sendClient("331", "Server", "No topic is set");
 				else
-					_client[c]->sendClient("332", it->second->getTopic());
+					_client[c]->sendClient("332", "Server", it->second->getTopic());
 			}
 			else
 				it->second->addTopic(parse.args[0]);
@@ -559,25 +560,26 @@ int Server::cmdSendF(Parse parse, int c) {
 int Server::cmdInv(Parse parse, int c) {
 	if (!_client[c]->getRegistered())
 		return(_client[c]->sendClient("451", "Server", "You are not registered"), 0);
-	if (_client[c]->getChannel() == NULL)
-		return (_client[c]->sendClient("442", "Server", "Not in any channel."), 0);
 	if (parse.args.size() < 2)
 		return (_client[c]->sendClient("461", "Server", "Not enough parameters"), 0);
+	if (_client[c]->getChannel() == NULL)
+		return (_client[c]->sendClient("442", "Server", "You are not in any channel."), 0);
+	if (_client[c]->getChannel() == NULL || _client[c]->getChannel()->getChannelName().compare(parse.args[1]))
+		return (_client[c]->sendClient("442", "Server", "You are not in the right channel."), 0);
 	if (!_client[c]->getOper())
 		return (_client[c]->sendClient("482", "Server", "You don't have the rights for this."), 0);
 
 	
 	for (unsigned int i = 0; i < _client.size(); i++)
 	{
-		if (_client[i]->getNickname() == parse.args[0])
+		if (_client[i]->getNickname().compare(parse.args[0]) == 0)
 		{
-			if (_client[i]->getChannel()->getChannelName().compare(parse.args[1]) != 0)
-			{
-				_client[c]->sendClient("443", "Server", "User is already on channel");
-				return 1;
-			}
+			if (_client[i]->getChannel() != NULL && _client[i]->getChannel()->getChannelName().compare(parse.args[1]) != 0)
+				return (_client[c]->sendClient("443", "Server", "User is already on channel"), 1);
+			_client[c]->getChannel()->addInvite(_client[i]);
 			_client[i]->sendClient("301", "Server", "User " + _client[c]->getNickname() + " invites you to channel " + parse.args[1]);
 			_client[c]->sendClient("341", "Invitation sent successfully.");
+			return 1;
 		}
 	}
 	_client[c]->sendClient("401", "Server", "Wrong username.");
@@ -609,7 +611,7 @@ int Server::cmdMode(Parse parse, int c) {
 		return(_client[c]->sendClient("451", "Server", "You are not registered"), 0);
 	if (_client[c]->getChannel() == NULL)
 		return (_client[c]->sendClient("442", "Server", "Not in any channel."), 0);
-	if (parse.args.size() < 1)
+	if (parse.args.size() < 2)
 		return (_client[c]->sendClient("461", "Server", "Not enough parameters"), 0);
 	if (!_client[c]->getOper())
 		return (_client[c]->sendClient("482", "Server", "You don't have the rights for this."), 0);
@@ -630,10 +632,14 @@ int Server::cmdMode(Parse parse, int c) {
 	{
 		case 'i':
 		{
-			if (parse.args[1][signIdx] == '-')
+			if (parse.args[1][signIdx] == '-') {
 				chan->second->setMode('i', 0);
-			else
+				_client[c]->getChannel()->deleteInvite(_client[c]);
+			}
+			else {
+				_client[c]->getChannel()->addInvite(_client[c]);
 				chan->second->setMode('i', 1);
+			}
 			i++;
 			goto loop;
 		}
@@ -710,7 +716,7 @@ int Server::cmdMode(Parse parse, int c) {
 			goto loop;
 		default:
 		{
-			if (i == parse.args[1].size() - 1)
+			if (i == parse.args[1].size())
 				break;
 			else
 				return (_client[c]->sendClient("472", parse.args[1][i] + ": unknown mode."), 0);
