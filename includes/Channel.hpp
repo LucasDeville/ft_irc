@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Channel.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/15 15:50:13 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/21 11:19:59 by bpleutin         ###   ########.fr       */
+/*   Updated: 2024/02/22 10:34:50 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,16 +28,20 @@ private:
 public:
 	
 	Channel(std::string const & name);
-	Channel(std::string const & name, Client & client);
+	Channel(std::string const & name, Client & client, Server & server);
 	~Channel();
 
-	void				addClient(Client & client);
+	std::string			listAllUsers() const;
+	int					getClientNum() const;
+	void				addClient(Client & client, Server & server);
 	void				addTopic(std::string str) { _topic = str; };
-	void				deleteClient(Client & client);
+	void				deleteClient(Client & client, Server & server);
 	std::string const &	getChannelName() const { return _name; };
 
 	std::vector<Client> getClientList() const { return _client; };
 	std::string			getTopic() const { return _topic; };
+
+	std::vector<Client>	getAllClients() const;
 
 };
 

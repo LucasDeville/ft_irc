@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:52:29 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/20 21:15:06 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/21 22:58:27 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,9 +24,38 @@ Client::~Client() {
 
 }
 
+
+void    Client::sendWelcome() const
+{
+    std::string paquet = ".----------------.  .----------------.  .----------------.  .----------------.\n";
+    paquet.append("| .--------------. || .--------------. || .--------------. || .--------------. |\n");
+    paquet.append("| |    ______    | || |  ________    | || |    _____     | || |  ____  ____  | |\n");
+    paquet.append("| |   / ____ `.  | || | |_   ___ `.  | || |   / ___ `.   | || | |_  _||_  _| | |\n");
+    paquet.append("| |   `'  __) |  | || |   | |   `. \\ | || |  |_/___) |   | || |   \\ \\  / /   | |\n");
+    paquet.append("| |   _  |__ '.  | || |   | |    | | | || |   .'____.'   | || |    \\ \\/ /    | |\n");
+    paquet.append("| |  | \\____) |  | || |  _| |___.' / | || |  / /____     | || |    _|  |_    | |\n");
+    paquet.append("| |   \\______.'  | || | |________.'  | || |  |_______|   | || |   |______|   | |\n");
+    paquet.append("| |              | || |              | || |              | || |              | |\n");
+    paquet.append("| '--------------' || '--------------' || '--------------' || '--------------' |\n");
+    paquet.append("'----------------'  '----------------'  '----------------'  '----------------' \n\n");
+    paquet.append("Welcome to the IRC 3D2Y server ! You can use the bot with the command 'HELP' if you need it.\n");
+
+    std::cout << "---> " << paquet << std::endl;
+    if (send(_socket, paquet.c_str(), paquet.length(), 0) < 0)
+        throw(std::out_of_range("Error while sending to the client."));
+}
+
+void    Client::sendClient(std::string num, std::string nickname, std::string str) 
+{
+    std::string paquet = num + " " + nickname + " :" + str + "\n";
+    std::cout << "---> " << paquet << std::endl;
+    if (send(_socket, paquet.c_str(), paquet.length(), 0) < 0)
+        throw(std::out_of_range("Error while sending to the client."));
+}
+
 void    Client::sendClient(std::string num, std::string str) 
 {
-    std::string paquet = ":" + num + " " + (_nickname.empty() ? "*" : _nickname) + " :" + str + "\n";
+    std::string paquet = num + " " + (_nickname.empty() ? "*" : _nickname) + " :" + str + "\n";
     std::cout << "---> " << paquet << std::endl;
     if (send(_socket, paquet.c_str(), paquet.length(), 0) < 0)
         throw(std::out_of_range("Error while sending to the client."));
@@ -39,7 +68,7 @@ void Client::notRegistered() {
 		return;
 	}
 	_registered = true;
-	sendClient("001", ":Welcome to the 42 IRC Network !\n");
+	sendClient("001", "You are now registered to the IRC 3D2Y server !\n");
 }
 
 void	Client::setChannel(Channel *channel) {
