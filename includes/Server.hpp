@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:48:01 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/22 10:27:40 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/22 14:17:09 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,6 +45,7 @@ public:
 	int		getClientIndex(int fd);
 	unsigned long int findPoolId(int fd);
 	void	checkChan(Channel * chan);
+	void	checkOperator(Client * cli);
 	int		sendAllClients(Channel *channel, int senderFd,  std::string nickname, std::string num, std::string message);
 
 	void	parseBuffer(std::string buffer, int i);

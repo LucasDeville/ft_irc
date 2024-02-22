@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:50:58 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/22 10:36:30 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/22 15:03:54 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,11 +88,21 @@ void Server::checkChan(Channel * chan) {
 
 	std::map<std::string, Channel *>::iterator it = _channel.find(chan->getChannelName());
 	if (it != _channel.end()) {
-		if (it->second->getClientNum() <= 0)
+		if (it->second->getClientNum() <= 0) {
 			delete it->second;
-		_channel.erase(it);
+			_channel.erase(it);
+		}
 	}
+	else
+		std::cout << "Channel :" << chan->getChannelName() << " not found" << std::endl;
+}
 
+void Server::checkOperator(Client * cli) {
+	int i = 0;
+	while (_operator[i]) {
+		if (_operator[i]->getSocket() == cli->getSocket())
+			_operator.erase(_operator.begin() + i);
+	}
 }
 
 void Server::clientDisconnected(long unsigned int i, int cli) {
@@ -102,6 +112,7 @@ void Server::clientDisconnected(long unsigned int i, int cli) {
 		_client[cli]->getChannel()->deleteClient(*_client[cli], *this);
 		checkChan(_client[cli]->getChannel());
 	}
+	checkOperator(_client[cli]);
 	std::cout << "IRC: Client '" << _client[i]->getNickname() << "' connection closed." << std::endl;
 	delete _client[cli];
 	_client.erase(_client.begin() + cli);
@@ -184,6 +195,7 @@ void Server::new_channel(Client & client, std::string const & name)
 {
 	Channel * channel = new Channel(name, client, *this);
 	_channel.insert( std::pair<std::string, Channel *>( name, channel ) );
+	client.setChannel(_channel[name]);
 }
 
 void Server::join_channel(Client & client, std::string const & name)
@@ -210,8 +222,8 @@ int	Server::sendAllClients(Channel *channel, int senderFd, std::string nickname,
 void	Server::parseBuffer(std::string buffer, int client) {
 
 	int cmd = 14;
-	std::string	commands[cmd] = {"PASS", "NICK", "USER", "JOIN", "PART", "QUIT", "OPER", "TOPIC", "KICK", "PRIVMSG", /*"SENDFILE", "GETFILE", "INVITE", */"HELP"}; //CHANGE number for below 
-	int	(Server::*_cPtr[cmd])(Parse parse, int client) = {&Server::cmdPass, &Server::cmdNick, &Server::cmdUser, &Server::cmdJoin, &Server::cmdLeaveChannel, &Server::cmdQuitServer, &Server::cmdOper, &Server::cmdTopic, &Server::cmdKick, &Server::cmdPM, /*&Server::cmdSendF, &Server::cmdGetF, &Server::cmdInv, */&Server::cmdBot};
+	std::string	commands[cmd] = {"PASS", "NICK", "USER", "JOIN", "PART", "QUIT", "OPER", "TOPIC", "KICK", "PRIVMSG", "SENDFILE", "GETFILE", "INVITE", "HELP"}; 
+	int	(Server::*_cPtr[cmd])(Parse parse, int client) = {&Server::cmdPass, &Server::cmdNick, &Server::cmdUser, &Server::cmdJoin, &Server::cmdLeaveChannel, &Server::cmdQuitServer, &Server::cmdOper, &Server::cmdTopic, &Server::cmdKick, &Server::cmdPM, &Server::cmdSendF, &Server::cmdGetF, &Server::cmdInv, &Server::cmdBot};
 
 	for(int i = 0; buffer[i]; i++) {
 		if (buffer[i] == '\n')
@@ -303,9 +315,12 @@ int	Server::cmdJoin(Parse parse, int c) {
 	if (parse.args[0].empty())
 		return (_client[c]->sendClient("461", "Not enough parameters"), 0);
 
+
 	if (_client[c]->getChannel() != NULL) {
+		if (_client[c]->getChannel()->getChannelName().compare(parse.args[0]) == 0)
+			return (_client[c]->sendClient("301", "You are already in this channel !"), 0);
 		_client[c]->getChannel()->deleteClient(*_client[c], *this);
-		_client[c]->setMode(0);
+		checkChan(_client[c]->getChannel());
 		_client[c]->setChannel(NULL);
 	}
 	if (_channel.find(parse.args[0]) == _channel.end())
@@ -322,17 +337,16 @@ int Server::cmdLeaveChannel(Parse parse, int c) {
 		return(_client[c]->sendClient("451", "You are not registered"), 0);
 	if (_client[c]->getChannel() == NULL)
 		return (_client[c]->sendClient("464", "Not in any channel."), 0);
-	
-	(void) parse;
+	if (!parse.args[0].empty() && _client[c]->getChannel()->getChannelName().compare(parse.args[0]) != 0)
+		return (_client[c]->sendClient("464", "Wrong channel name."), 0);
 	std::map<std::string, Channel *>::iterator it;
-
 	for (it = _channel.begin(); it != _channel.end(); ++it)
 	{
     	if (it->second == _client[c]->getChannel() || parse.args[0] == "0")
 		{
 			_client[c]->setChannel(NULL);
-			_client[c]->setMode(0);
 			it->second->deleteClient(*_client[c], *this);
+			checkChan(it->second);
 			return 1;
 		}
 	}
@@ -351,19 +365,19 @@ int Server::cmdOper(Parse parse, int c) {
 		return(_client[c]->sendClient("451", "You are not registered."), 0);
 	if (_client[c]->getMode())
 	{
-		_client[c]->sendClient("381", "You now have operator rights !");
+		_client[c]->sendClient("381", "You are alreay an operator !");
 		return 1;
 	}
 
 	(void) parse;
 	
-	
-	if (!this->getOperatorList().empty())
+	if (!_operator.empty())
 	{
 		_client[c]->sendClient("464", "Denied. If you want operator rights, ask an operator.");
 		return 0;
 	}
-	this->getOperatorList().push_back(_client[c]);
+	_operator.push_back(_client[c]);
+	std::cout << "Operator : " << _operator[0]->getNickname() << std::endl;
 	_client[c]->sendClient("381", "You now have operator rights !");
 	_client[c]->setMode(1);
 	
@@ -378,7 +392,7 @@ int Server::cmdTopic(Parse parse, int c) {
 		_client[c]->sendClient("442", "Not in any channel.");
 		return 0;	
 	}
-	if (!_client[c]->getMode())
+	if (!_client[c]->getMode() && !parse.args[0].empty())
 	{
 		_client[c]->sendClient("482", "You don't have the rights for this.");
 		return 0;
@@ -418,23 +432,26 @@ int Server::cmdKick(Parse parse, int c) {
 		_client[c]->sendClient("482", "You don't have the rights for this.");
 		return 0;
 	}
+	if (parse.args.size() < 3)
+		return (_client[c]->sendClient("461", "Not enought parameter !"), 0);
 	
-	if (_channel.find(parse.args[1]) == _channel.end())
-		_client[c]->sendClient("403", "Channel doesn't exist");
+	if (_channel.find(parse.args[0]) == _channel.end())
+		return (_client[c]->sendClient("403", "Channel doesn't exist"), 0);
 	
 	for (unsigned int i = 0; i < _client.size(); i++)
 	{
-		if (_client[i]->getNickname() == parse.args[0] && _client[i]->getChannel() != NULL)
+		if (_client[i]->getNickname() == parse.args[1] && _client[i]->getChannel() != NULL
+			&& _client[i]->getChannel()->getChannelName().compare(parse.args[0]) == 0)
 		{
-			// send channel "KICK _client[i] from [channel]"
-			_client[c]->sendClient("301", _client[i]->getNickname() + " successfully kicked");
-			_client[i]->sendClient("301", "You have been kicked by " + _client[c]->getNickname() + ":" + parse.args[2]);
+			_client[c]->sendClient("301", "Server", _client[i]->getNickname() + " successfully kicked");
+			_client[i]->sendClient("301", "Server", "You have been kicked by " + _client[c]->getNickname() + ":" + parse.args[2]);
 			_client[i]->getChannel()->deleteClient(*_client[i], *this);
+			checkChan(_client[i]->getChannel());
+			_client[i]->setChannel(NULL);
 			return 1;
 		}
 	}
 	_client[c]->sendClient("441", "Wrong username or not in that channel.");
-
 	return 0;
 }
 
@@ -448,13 +465,15 @@ int Server::cmdPM(Parse parse, int c) {
 		if (chan == _channel.end())
 			return (_client[c]->sendClient("404", "This channel doesn't exist."), 0);
 		else {
-			if (_client[c]->getChannel()->getChannelName().compare(&parse.args[0][1]) != 0)
+			if (!_client[c]->getChannel() || _client[c]->getChannel()->getChannelName().compare(&parse.args[0][1]) != 0)
 				return (_client[c]->sendClient("404", "You are not in that channel !"), 1);
-			else	
-				return (sendAllClients(chan->second, _client[c]->getSocket(), _client[c]->getNickname(), "301", parse.args[1]), 1);
+			else {
+				std::string str = parse.args[0] + " :" + parse.args[1];
+				return (sendAllClients(chan->second, _client[c]->getSocket(), _client[c]->getNickname(), "301", str), 1);
+			}
 		}
 	}
-	
+
 	for (unsigned int i = 0; i < _client.size(); i++)
 	{
 		if (_client[i]->getNickname() == parse.args[0]) {
