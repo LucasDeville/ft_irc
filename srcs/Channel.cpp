@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/15 15:54:31 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/21 22:33:28 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/22 10:34:38 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,19 @@ std::string		Channel::listAllUsers() const
 		it++;
 	}
 	return (str);
-};
+}
+
+int		Channel::getClientNum() const
+{
+	int i = 0;
+
+	std::vector<Client>::const_iterator it = _client.begin();
+	while (it != _client.end()) {
+		i++;
+		it++;
+	}
+	return (i);
+}
 
 void	Channel::addClient(Client & client, Server & server) {
 
@@ -52,14 +64,14 @@ void	Channel::addClient(Client & client, Server & server) {
 	client.sendClient("332", (_name + " :" + _topic));
 	client.sendClient("353", (" = " + _name, listAllUsers()));
 	client.sendClient("353", (" " + _name + " :End of NAMES list."));
-	server.sendAllClients(this, client.getSocket(), "", (client.getNickname() + " join the channel"));
+	server.sendAllClients(this, client.getSocket(), "", "", (client.getNickname() + " join the channel"));
 }
 
 void	Channel::deleteClient(Client & client, Server & server) {
 
 	for(long unsigned int i = 0; i != _client.size(); i++) {
 		if (_client[i].getSocket() == client.getSocket()) {
-			server.sendAllClients(this, _client[i].getSocket(), "", (_client[i].getNickname() + " just left the channel"));
+			server.sendAllClients(this, _client[i].getSocket(), "", "", (_client[i].getNickname() + " just left the channel"));
 			_client.erase(_client.begin() + i);
 			break ;
 		}

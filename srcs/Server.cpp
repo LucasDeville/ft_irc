@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:50:58 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/21 22:40:18 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/22 10:36:30 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,11 +84,24 @@ void Server::serverLoop() {
 	}
 }
 
+void Server::checkChan(Channel * chan) {
+
+	std::map<std::string, Channel *>::iterator it = _channel.find(chan->getChannelName());
+	if (it != _channel.end()) {
+		if (it->second->getClientNum() <= 0)
+			delete it->second;
+		_channel.erase(it);
+	}
+
+}
+
 void Server::clientDisconnected(long unsigned int i, int cli) {
 	close(_client[cli]->getSocket());
 	_pollfd.erase(_pollfd.begin() + i);
-	if (_client[cli]->getChannel() != NULL)
+	if (_client[cli]->getChannel() != NULL) {
 		_client[cli]->getChannel()->deleteClient(*_client[cli], *this);
+		checkChan(_client[cli]->getChannel());
+	}
 	std::cout << "IRC: Client '" << _client[i]->getNickname() << "' connection closed." << std::endl;
 	delete _client[cli];
 	_client.erase(_client.begin() + cli);
@@ -131,18 +144,32 @@ int Server::getClientIndex(int fd) {
 	return -1;
 }
 
+unsigned long int Server::findPoolId(int fd) {
+
+	unsigned long int index = 0;
+
+	while (_pollfd[index].fd > 0) {
+		if (_pollfd[index].fd == fd)
+			return index;
+		index++;
+	}
+	return index;
+}
+
 void Server::handleInput(unsigned long int i) {
 	char buffer[8192];
 	int err = recv(_pollfd[i].fd, &buffer, sizeof(buffer), 0);
-	if (err < 0)
-		throw recvFailed();
-	buffer[err] = '\0';
 	int cli = getClientIndex(_pollfd[i].fd);
 	if (cli == -1)
 		return ;
-	if (err == 0)
-	 	clientDisconnected(i, cli);
-	//std::string str(buffer, strlen(buffer) - 1);
+	if (err <= 0) {
+		
+		if (err < 0)
+			throw recvFailed();
+		clientDisconnected(i, cli);
+		return ;
+	}
+	buffer[err] = '\0';
 	parseBuffer(buffer, cli);
 	memset(&buffer, 0, 8192);
 }
@@ -168,13 +195,13 @@ void Server::join_channel(Client & client, std::string const & name)
 	}
 }
 
-int	Server::sendAllClients(Channel *channel, int senderFd, std::string num, std::string message) {
+int	Server::sendAllClients(Channel *channel, int senderFd, std::string nickname, std::string num, std::string message) {
 	std::vector<Client> clients = channel->getAllClients();
 	std::vector<Client>::iterator it = clients.begin();
 	while (it != clients.end())
 	{
 		if (senderFd != it->getSocket())
-			it->sendClient(num, message);
+			it->sendClient(num, nickname, message);
 		it++;
 	}
 	return (1);
@@ -182,9 +209,9 @@ int	Server::sendAllClients(Channel *channel, int senderFd, std::string num, std:
 
 void	Server::parseBuffer(std::string buffer, int client) {
 
-	int cmd = 10;
-	std::string	commands[cmd] = {"PASS", "NICK", "USER", "JOIN", "PART", "QUIT", "OPER", "TOPIC", "KICK", "PRIVMSG"}; //CHANGE number for below 
-	int	(Server::*_cPtr[cmd])(Parse parse, int client) = {&Server::cmdPass, &Server::cmdNick, &Server::cmdUser, &Server::cmdJoin, &Server::cmdLeaveChannel, &Server::cmdQuitServer, &Server::cmdOper, &Server::cmdTopic, &Server::cmdKick, &Server::cmdPM};
+	int cmd = 14;
+	std::string	commands[cmd] = {"PASS", "NICK", "USER", "JOIN", "PART", "QUIT", "OPER", "TOPIC", "KICK", "PRIVMSG", /*"SENDFILE", "GETFILE", "INVITE", */"HELP"}; //CHANGE number for below 
+	int	(Server::*_cPtr[cmd])(Parse parse, int client) = {&Server::cmdPass, &Server::cmdNick, &Server::cmdUser, &Server::cmdJoin, &Server::cmdLeaveChannel, &Server::cmdQuitServer, &Server::cmdOper, &Server::cmdTopic, &Server::cmdKick, &Server::cmdPM, /*&Server::cmdSendF, &Server::cmdGetF, &Server::cmdInv, */&Server::cmdBot};
 
 	for(int i = 0; buffer[i]; i++) {
 		if (buffer[i] == '\n')
@@ -276,6 +303,11 @@ int	Server::cmdJoin(Parse parse, int c) {
 	if (parse.args[0].empty())
 		return (_client[c]->sendClient("461", "Not enough parameters"), 0);
 
+	if (_client[c]->getChannel() != NULL) {
+		_client[c]->getChannel()->deleteClient(*_client[c], *this);
+		_client[c]->setMode(0);
+		_client[c]->setChannel(NULL);
+	}
 	if (_channel.find(parse.args[0]) == _channel.end())
 		new_channel(*_client[c], parse.args[0]);
 	else
@@ -309,7 +341,7 @@ int Server::cmdLeaveChannel(Parse parse, int c) {
 
 int Server::cmdQuitServer(Parse parse, int c) {
 	(void) parse;
-	clientDisconnected(_client[c]->getSocket(), c);
+	clientDisconnected(findPoolId(_client[c]->getSocket()), c);
 	return 1;
 }
 
@@ -415,15 +447,20 @@ int Server::cmdPM(Parse parse, int c) {
 		std::map<std::string, Channel *>::iterator chan = _channel.find(&parse.args[0][1]);
 		if (chan == _channel.end())
 			return (_client[c]->sendClient("404", "This channel doesn't exist."), 0);
-		else
-			return (sendAllClients(chan->second, _client[c]->getSocket(), "301", parse.args[1]), 1);
+		else {
+			if (_client[c]->getChannel()->getChannelName().compare(&parse.args[0][1]) != 0)
+				return (_client[c]->sendClient("404", "You are not in that channel !"), 1);
+			else	
+				return (sendAllClients(chan->second, _client[c]->getSocket(), _client[c]->getNickname(), "301", parse.args[1]), 1);
+		}
 	}
 	
 	for (unsigned int i = 0; i < _client.size(); i++)
 	{
-		if (_client[i]->getNickname() == parse.args[0])
-			_client[i]->sendClient("301", parse.args[1]);
-		return 1;
+		if (_client[i]->getNickname() == parse.args[0]) {
+			_client[i]->sendClient("301", _client[c]->getNickname(), parse.args[1]);
+			return 1;
+		}
 	}
 	_client[c]->sendClient("401", "Wrong username.");
 	return 0;
@@ -432,11 +469,17 @@ int Server::cmdPM(Parse parse, int c) {
 int Server::cmdBot(Parse parse, int c) {
 	std::string helpmsg("");
 
-	helpmsg.append("Hi, I am an assistant bot here to walk you through the registration process.\n");
-	helpmsg.append("Step #1: PASS [password]\n");
-	helpmsg.append("Step #2: NICK [nickname]\n");
-	helpmsg.append("Step #3: USER [username] * * [complete name]\n");
-	helpmsg.append("Step #4: JOIN [channel]\n");
+	if (!_client[c]->getRegistered()) {
+		helpmsg.append("Hi, I am an assistant bot here to walk you through the registration process.\n");
+		helpmsg.append("Step #1: PASS [password]\n");
+		helpmsg.append("Step #2: NICK [nickname]\n");
+		helpmsg.append("Step #3: USER [username] * * [complete name]\n");
+	}
+	else {
+		helpmsg.append("You can navigate throught the server with different commande like :\n");
+		helpmsg.append("JOIN [channel]\n");
+		helpmsg.append("PRIVMSG [nickname or #channel] : [message]\n");
+	}
 
 	(void) parse;
 	
