@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/15 15:50:13 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/21 14:15:54 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/22 10:34:50 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,13 +28,14 @@ private:
 public:
 	
 	Channel(std::string const & name);
-	Channel(std::string const & name, Client & client);
+	Channel(std::string const & name, Client & client, Server & server);
 	~Channel();
 
 	std::string			listAllUsers() const;
-	void				addClient(Client & client);
+	int					getClientNum() const;
+	void				addClient(Client & client, Server & server);
 	void				addTopic(std::string str) { _topic = str; };
-	void				deleteClient(Client & client);
+	void				deleteClient(Client & client, Server & server);
 	std::string const &	getChannelName() const { return _name; };
 
 	std::vector<Client> getClientList() const { return _client; };
