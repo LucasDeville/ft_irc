@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
+/*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:52:29 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/22 15:29:43 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/22 17:03:00 by bpleutin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@ Client::Client() {
 
 }
 
-Client::Client(int socket) : _hostname("localhost"), _mode(0), _socket(socket), _auth(false), _registered(false), _channel(NULL) {
+Client::Client(int socket) : _hostname("localhost"), _oper(0), _socket(socket), _auth(false), _registered(false), _channel(NULL) {
 
 }
 
