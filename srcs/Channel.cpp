@@ -3,30 +3,24 @@
 /*                                                        :::      ::::::::   */
 /*   Channel.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
+/*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/15 15:54:31 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/22 15:48:18 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/22 15:23:25 by bpleutin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Channel.hpp"
 
-Channel::Channel(std::string const & name) : _name(name), _topic("") {
+Channel::Channel(std::string const & name) : _name(name), _topic(""), _limit(-1), _users(0) {
 	_mode.insert(std::pair<const char, int>('i', 0));
 	_mode.insert(std::pair<const char, int>('t', 0));
-	_mode.insert(std::pair<const char, int>('k', 0));
-	_mode.insert(std::pair<const char, int>('o', 0));
-	_mode.insert(std::pair<const char, int>('l', 0));
 }
 
-Channel::Channel(std::string const & name, Client & client, Server & server) : _name(name), _topic("") {
+Channel::Channel(std::string const & name, Client & client, Server & server) : _name(name), _topic(""), _limit(-1), _users(0) {
 	addClient(client, server);
 	_mode.insert(std::pair<const char, int>('i', 0));
 	_mode.insert(std::pair<const char, int>('t', 0));
-	_mode.insert(std::pair<const char, int>('k', 0));
-	_mode.insert(std::pair<const char, int>('o', 0));
-	_mode.insert(std::pair<const char, int>('l', 0));
 }
 
 Channel::~Channel() {
@@ -74,6 +68,7 @@ void	Channel::deleteClient(Client & client, Server & server) {
 		if (_client[i].getSocket() == client.getSocket()) {
 			server.sendAllClients(this, _client[i].getSocket(), ("#" +_name), "301", (_client[i].getNickname() + " just left the channel"));
 			_client.erase(_client.begin() + i);
+      rmUser();
 			break ;
 		}
 	}
