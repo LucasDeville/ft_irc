@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:50:58 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/22 22:04:12 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/25 09:51:07 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -626,6 +626,7 @@ int Server::cmdMode(Parse parse, int c) {
 		return (_client[c]->sendClient("301", "Wrong argument"), 0);
 
 	int signIdx = 0;
+	long unsigned int actual = 2;
 
 	loop:
 	switch (parse.args[1][i])
@@ -662,9 +663,9 @@ int Server::cmdMode(Parse parse, int c) {
 					return (_client[c]->sendClient("467", "Server", "Key already set"), 0);
 				else
 				{
-					if (parse.args.size() < 3)
+					if (parse.args.size() < (actual + 1))
 						return (_client[c]->sendClient("461", "Not enough parameters"), 0);
-					chan->second->setKey(parse.args[2]);
+					chan->second->setKey(parse.args[actual++]);
 				}
 			}
 			i++;
@@ -672,18 +673,18 @@ int Server::cmdMode(Parse parse, int c) {
 		}
 		case 'o':
 		{
-			if (parse.args.size() < 3)
+			if (parse.args.size() < (actual + 1))
 				return (_client[c]->sendClient("461", "Not enough parameters"), 0);
 			
 			unsigned int j;
 			for (j = 0; j < _client.size(); j++)
 			{
-				if (_client[j]->getNickname() == parse.args[2])
+				if (_client[j]->getNickname() == parse.args[actual])
 					break;
 			}
 			if (j == _client.size())
 				return (_client[c]->sendClient("401", "No such nickname"), 0);
-	
+			actual++;
 			if (parse.args[1][signIdx] == '-')
 				_client[j]->setOper(0);
 			else
@@ -697,11 +698,11 @@ int Server::cmdMode(Parse parse, int c) {
 				chan->second->setLimit(-1);
 			else
 			{
-				if (parse.args.size() < 3)
+				if (parse.args.size() < (actual + 1))
 					return (_client[c]->sendClient("461", "Not enough parameters"), 0);	
-				if (std::atoi(parse.args[2].c_str()) == 0)
+				if (std::atoi(parse.args[actual].c_str()) == 0)
 					return (_client[c]->sendClient("301", "Server", "Invalid limit number"), 0);
-				chan->second->setLimit(std::atoi(parse.args[2].c_str()));
+				chan->second->setLimit(std::atoi(parse.args[actual++].c_str()));
 			}
 			i++;
 			goto loop;
