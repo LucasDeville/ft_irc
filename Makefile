@@ -10,11 +10,6 @@ INCL = -I ./includes
 OBJS_EXEC = ${SRCS:.cpp=.o}
 EXEC = ircserv
 
-# NICK ldeville
-# USER ldeville * * :Lucas Deville
-# PASS 123
-
-
 all: ${EXEC}
 	echo "\033[7;32m~| Tous les fichiers sont à jour ! |~\033[0m"\
 

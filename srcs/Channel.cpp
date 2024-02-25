@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/15 15:54:31 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/22 21:56:51 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/25 14:33:10 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,7 +57,7 @@ void	Channel::addClient(Client & client, Server & server) {
 	client.sendClient("", "", ("JOIN #" + _name));
 	client.sendClient("332", "Server", (_name + " :" + _topic));
 	client.sendClient("353", "Server",(" = " + _name, listAllUsers()));
-	client.sendClient("353", "Server",(" " + _name + " :End of NAMES list."));
+	client.sendClient("366", "Server",(" " + _name + " :End of NAMES list."));
 	server.sendAllClients(this, client.getSocket(), ("#" +_name), "301", (client.getNickname() + " join the channel"));
 	addUser();
 }

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bpleutin <bpleutin@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:48:01 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/22 15:49:26 by bpleutin         ###   ########.fr       */
+/*   Updated: 2024/02/25 13:41:09 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,7 +47,7 @@ public:
 	void	checkChan(Channel * chan);
 	void	checkOperator(Client * cli);
 	int		sendAllClients(Channel *channel, int senderFd,  std::string nickname, std::string num, std::string message);
-
+	void	parseMultiple(std::string buffer, int client);
 	void	parseBuffer(std::string buffer, int i);
 	std::vector<Client *> getOperatorList() const { return _operator; };
 

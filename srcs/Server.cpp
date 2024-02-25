@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:50:58 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/25 09:51:07 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/25 14:53:51 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,7 +59,7 @@ void Server::createServer() {
 	if (listen(sockfd, 5) == -1)
 		throw listenFailed();
 
-	if (fcntl(sockfd, F_SETFL, O_NONBLOCK) < 0) //non blocking
+	if (fcntl(sockfd, F_SETFL, O_NONBLOCK) < 0)
 		throw listenFailed();
 
 	memset(&poll, 0, sizeof(poll));
@@ -228,6 +228,16 @@ int	Server::sendAllClients(Channel *channel, int senderFd, std::string nickname,
 	return (1);
 }
 
+void	Server::parseMultiple(std::string buffer, int client) {
+	int y = 0;
+	for(int i = 0; buffer[i]; i++) {
+		if (buffer[i] == '\n') {
+			parseBuffer(buffer.substr(y, i - 1), client);
+			y = i + 1;
+		}
+	}
+}
+
 void	Server::parseBuffer(std::string buffer, int client) {
 
 	int cmd = 15;
@@ -235,16 +245,22 @@ void	Server::parseBuffer(std::string buffer, int client) {
 	int	(Server::*_cPtr[cmd])(Parse parse, int client) = {&Server::cmdPass, &Server::cmdNick, &Server::cmdUser, &Server::cmdJoin, &Server::cmdLeaveChannel, &Server::cmdQuitServer, &Server::cmdOper, &Server::cmdTopic, &Server::cmdKick, &Server::cmdPM, &Server::cmdSendF, &Server::cmdGetF, &Server::cmdInv, &Server::cmdMode, &Server::cmdBot};
 
 	for(int i = 0; buffer[i]; i++) {
-		if (buffer[i] == '\n')
-			buffer[i] = 0; 
+		if (buffer[i] == '\n' && buffer[i + 1] ){
+			parseMultiple(buffer, client);
+			return ;
+		}
 	}
-
+	for(int i = 0; buffer[i]; i++) {
+		if (buffer[i] == '\n')
+			buffer[i] = 0;
+	}
 	Parse parse(buffer);
 	
 	for (int i = 0; i < cmd; i++) {
 		if (parse.cmd.compare(commands[i]) == 0) {
 			if (!(this->*_cPtr[i])(parse, client))
-				std::cout << "Error on command : " << commands[i] << std::endl;
+				return ;
+			// std::cout << "Error on command : " << commands[i] << std::endl;
 			return ;
 		}
 	}
@@ -262,7 +278,7 @@ int	Server::cmdPass(Parse parse, int c) {
 	if (parse.args[0].empty())
 		return (_client[c]->sendClient("461", "Server", "Not enough parameters"), 0);
 
-	if (!strcmp(parse.args[0].c_str(), _passwd.c_str())) {
+	if (parse.args[0].compare(_passwd) == 0) {
 		_client[c]->setPass(parse.args[0]);
 		_client[c]->setAuth(true);
 		return (1);
@@ -603,7 +619,7 @@ int Server::cmdBot(Parse parse, int c) {
 
 	(void) parse;
 	
-	return (_client[c]->sendClient("301", helpmsg), 1);
+	return (_client[c]->sendClient("301", "Bot", helpmsg), 1);
 }
 
 int Server::cmdMode(Parse parse, int c) {
