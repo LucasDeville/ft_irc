@@ -6,7 +6,7 @@
 /*   By: ldeville <ldeville@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:50:58 by ldeville          #+#    #+#             */
-/*   Updated: 2024/02/25 14:53:51 by ldeville         ###   ########.fr       */
+/*   Updated: 2024/02/26 10:11:01 by ldeville         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -240,9 +240,9 @@ void	Server::parseMultiple(std::string buffer, int client) {
 
 void	Server::parseBuffer(std::string buffer, int client) {
 
-	int cmd = 15;
-	std::string	commands[cmd] = {"PASS", "NICK", "USER", "JOIN", "PART", "QUIT", "OPER", "TOPIC", "KICK", "PRIVMSG", "SENDFILE", "GETFILE", "INVITE", "MODE", "HELP"}; 
-	int	(Server::*_cPtr[cmd])(Parse parse, int client) = {&Server::cmdPass, &Server::cmdNick, &Server::cmdUser, &Server::cmdJoin, &Server::cmdLeaveChannel, &Server::cmdQuitServer, &Server::cmdOper, &Server::cmdTopic, &Server::cmdKick, &Server::cmdPM, &Server::cmdSendF, &Server::cmdGetF, &Server::cmdInv, &Server::cmdMode, &Server::cmdBot};
+	// int cmd = 15;
+	std::string	commands[15] = {"PASS", "NICK", "USER", "JOIN", "PART", "QUIT", "OPER", "TOPIC", "KICK", "PRIVMSG", "SENDFILE", "GETFILE", "INVITE", "MODE", "HELP"}; 
+	int	(Server::*_cPtr[15])(Parse parse, int client) = {&Server::cmdPass, &Server::cmdNick, &Server::cmdUser, &Server::cmdJoin, &Server::cmdLeaveChannel, &Server::cmdQuitServer, &Server::cmdOper, &Server::cmdTopic, &Server::cmdKick, &Server::cmdPM, &Server::cmdSendF, &Server::cmdGetF, &Server::cmdInv, &Server::cmdMode, &Server::cmdBot};
 
 	for(int i = 0; buffer[i]; i++) {
 		if (buffer[i] == '\n' && buffer[i + 1] ){
@@ -256,7 +256,7 @@ void	Server::parseBuffer(std::string buffer, int client) {
 	}
 	Parse parse(buffer);
 	
-	for (int i = 0; i < cmd; i++) {
+	for (int i = 0; i < 15; i++) {
 		if (parse.cmd.compare(commands[i]) == 0) {
 			if (!(this->*_cPtr[i])(parse, client))
 				return ;
@@ -735,8 +735,10 @@ int Server::cmdMode(Parse parse, int c) {
 		{
 			if (i == parse.args[1].size())
 				break;
-			else
-				return (_client[c]->sendClient("472", parse.args[1][i] + ": unknown mode."), 0);
+			else {
+				char charAsString[2] = {parse.args[1][i], '\0'};
+				return (_client[c]->sendClient("472", std::string(charAsString) + ": unknown mode."), 0);
+			}
 		}
 	}
 
